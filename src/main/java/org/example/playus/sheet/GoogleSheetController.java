@@ -1,4 +1,4 @@
-package domain.sheet;
+package org.example.playus.sheet;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
