@@ -1,4 +1,4 @@
-package domain.sheet;
+package org.example.playus.sheet;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.services.sheets.v4.Sheets;
