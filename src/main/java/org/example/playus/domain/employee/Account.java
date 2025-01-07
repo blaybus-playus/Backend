@@ -1,5 +1,6 @@
 package org.example.playus.domain.employee;
 
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
@@ -18,6 +19,13 @@ public class Account {
     }
 
     public void setUpdatedPassword(String updatedPassword) {
+        this.updatedPassword = updatedPassword;
+    }
+
+    @Builder
+    public Account(String username, String defaultPassword, String updatedPassword) {
+        this.username = username;
+        this.defaultPassword = defaultPassword;
         this.updatedPassword = updatedPassword;
     }
 }

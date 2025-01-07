@@ -70,11 +70,12 @@ public class GoogleSheetsConvert {
             employee.setPersonalInfo(personalInfo);
 
             // Account 생성 및 설정
-            Account account = new Account();
-            account.setUsername(row.get(headerIndexMap.get("아이디")).toString());
-            account.setDefaultPassword(row.get(headerIndexMap.get("기본패스워드")).toString());
-            account.setUpdatedPassword(row.get(headerIndexMap.get("변경패스워드")) == null ? null :
-                    row.get(headerIndexMap.get("변경패스워드")).toString());
+            Account account = Account.builder()
+                    .username(row.get(headerIndexMap.get("아이디")).toString())
+                    .defaultPassword(row.get(headerIndexMap.get("기본패스워드")).toString())
+                    .updatedPassword(row.get(headerIndexMap.get("변경패스워드")) == null ? null :
+                            row.get(headerIndexMap.get("변경패스워드")).toString())
+                    .build();
             employee.setAccount(account);
 
             // 연도별 포인트 설정
