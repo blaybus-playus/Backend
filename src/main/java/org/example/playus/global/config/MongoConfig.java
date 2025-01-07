@@ -1,4 +1,4 @@
-package org.example.playus.global;
+package org.example.playus.global.config;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
