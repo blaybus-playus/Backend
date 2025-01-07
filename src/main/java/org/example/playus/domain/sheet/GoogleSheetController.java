@@ -1,7 +1,8 @@
-package org.example.playus.sheet;
+package org.example.playus.domain.sheet;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,6 +29,17 @@ public class GoogleSheetController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body(null);
+        }
+    }
+
+    @PostMapping("/sync")
+    public ResponseEntity<String> syncUsers() {
+        try {
+            googleSheetService.syncGoogleSheetToMongo(spreadSheetId, "시트10!B2:V");
+            return ResponseEntity.ok("데이터 동기화 완료");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("동기화 실패: " + e.getMessage());
         }
     }
 }
