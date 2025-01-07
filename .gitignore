@@ -41,3 +41,6 @@ src/main/resources/application-dev.properties
 
 ### src/main/resources/googleSheet 디렉토리 무시 ###
 src/main/resources/googleSheet/
+
+### docker-compose ###
+docker-compose.yml
