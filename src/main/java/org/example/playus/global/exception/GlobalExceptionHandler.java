@@ -1,6 +1,6 @@
 package org.example.playus.global.exception;
 
-import com.example.onemonth.global.common.CommonErrorResponse;
+import org.example.playus.global.common.CommonErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;

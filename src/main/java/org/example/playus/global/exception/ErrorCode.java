@@ -25,7 +25,10 @@ public enum ErrorCode {
     // USER
     USER_NOT_FOUND(HttpStatus.BAD_REQUEST, "유저를 찾을 수 없습니다."),
     USER_ALREADY_EXIST(HttpStatus.CONFLICT, "이미 같은 이름을 가진 유저가 존재합니다."),
-    PASSWORD_NOT_CORRECT(HttpStatus.BAD_REQUEST, "패스워드가 일치하지 않습니다.");
+    PASSWORD_NOT_CORRECT(HttpStatus.BAD_REQUEST, "패스워드가 일치하지 않습니다."),
+
+    // EMPLOYEE
+    EMPLOYEE_NOT_FOUND(HttpStatus.BAD_REQUEST, "직원을 찾을 수 없습니다."),;
 
     private final HttpStatus status;
     private final String message;
