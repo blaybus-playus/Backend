@@ -1,4 +1,4 @@
-package org.example.playus.sheet;
+package org.example.playus.domain.employee;
 
 import lombok.Getter;
 import org.springframework.data.annotation.Id;
@@ -7,8 +7,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.Map;
 
 @Getter
-@Document(collection = "users")
-public class User {
+@Document(collection = "employee")
+public class Employee {
 
     @Id
     private String employeeId; // MongoDB에서 _id 역할
