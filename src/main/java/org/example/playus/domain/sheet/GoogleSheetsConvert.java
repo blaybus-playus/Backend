@@ -1,13 +1,22 @@
-package org.example.playus.sheet;
+package org.example.playus.domain.sheet;
+
+import org.example.playus.domain.employee.Account;
+import org.example.playus.domain.employee.Employee;
+import org.example.playus.domain.employee.PersonalInfo;
 
 import java.util.*;
 
 public class GoogleSheetsConvert {
 
-    public static List<User> convertToUsers(List<List<Object>> sheetData) {
-        List<User> users = new ArrayList<>();
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GoogleSheetsConvert.class);
 
-        if (sheetData.isEmpty()) return users;
+    public static List<Employee> convertToUsers(List<List<Object>> sheetData) {
+        List<Employee> employees = new ArrayList<>();
+
+        if (sheetData.isEmpty()) {
+            log.warn("Sheet data is empty.");
+            return employees;
+        }
 
         // 첫 번째 줄에서 헤더 정보를 추출
         List<Object> headers = sheetData.get(0);
@@ -15,6 +24,10 @@ public class GoogleSheetsConvert {
         for (int i = 0; i < headers.size(); i++) {
             headerIndexMap.put(headers.get(i).toString(), i);
         }
+
+        // 헤더 확인
+        log.info("Headers: {}", headers);
+        log.info("Header Index Map: {}", headerIndexMap);
 
         // 필수 헤더 이름 정의
         String[] requiredHeaders = {
@@ -36,11 +49,16 @@ public class GoogleSheetsConvert {
             List<Object> row = sheetData.get(i);
 
             // 데이터가 누락되지 않았는지 확인
-            if (row.size() < headers.size()) continue;
+            if (row.size() < headers.size()) {
+                log.warn("Skipping row {}: Missing data (Expected size: {}, Actual size: {})", i, headers.size(), row.size());
+                continue;
+            }
+
+            log.info("Processing row {}: {}", i, row);
 
             // User 객체 생성
-            User user = new User();
-            user.setEmployeeId(row.get(headerIndexMap.get("사번")).toString());
+            Employee employee = new Employee();
+            employee.setEmployeeId(row.get(headerIndexMap.get("사번")).toString());
 
             // PersonalInfo 생성 및 설정
             PersonalInfo personalInfo = new PersonalInfo();
@@ -49,7 +67,7 @@ public class GoogleSheetsConvert {
             personalInfo.setDepartment(row.get(headerIndexMap.get("소속")).toString());
             personalInfo.setJobGroup(row.get(headerIndexMap.get("직무그룹")).toString());
             personalInfo.setLevel(row.get(headerIndexMap.get("레벨")).toString());
-            user.setPersonalInfo(personalInfo);
+            employee.setPersonalInfo(personalInfo);
 
             // Account 생성 및 설정
             Account account = new Account();
@@ -57,7 +75,7 @@ public class GoogleSheetsConvert {
             account.setDefaultPassword(row.get(headerIndexMap.get("기본패스워드")).toString());
             account.setUpdatedPassword(row.get(headerIndexMap.get("변경패스워드")) == null ? null :
                     row.get(headerIndexMap.get("변경패스워드")).toString());
-            user.setAccount(account);
+            employee.setAccount(account);
 
             // 연도별 포인트 설정
             Map<String, Integer> points = new HashMap<>();
@@ -65,14 +83,27 @@ public class GoogleSheetsConvert {
                 String yearKey = year + "년";
                 if (headerIndexMap.containsKey(yearKey)) {
                     String pointString = row.get(headerIndexMap.get(yearKey)).toString().replace(",", "").trim();
-                    int point = pointString.isEmpty() ? 0 : Integer.parseInt(pointString);
+
+                    // 빈 값 처리: 빈 값이면 0으로 처리
+                    if (pointString.isEmpty()) {
+                        pointString = "0"; // 빈 값인 경우 0으로 처리
+                    }
+
+                    int point = Integer.parseInt(pointString);
                     points.put(String.valueOf(year), point);
+                } else {
+                    // 연도 열이 없을 경우 0으로 처리
+                    points.put(String.valueOf(year), 0);
                 }
             }
-            user.setPoints(points);
+            employee.setPoints(points);
 
-            users.add(user);
+            log.info("Employee created: {}", employee);
+
+            employees.add(employee);
         }
-        return users;
+
+        log.info("Total employees processed: {}", employees.size());
+        return employees;
     }
 }
