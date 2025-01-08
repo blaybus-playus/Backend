@@ -9,4 +9,10 @@ import java.util.Optional;
 public interface EmployeeRepositoryMongo extends MongoRepository<Employee, String> {
 
     Optional<Employee> findByPersonalInfoName(String username);
+
+    Optional<Employee> findByAccountUsername(String username);
+
+    boolean existsByPersonalInfoConum(int conum);
+
+
 }
