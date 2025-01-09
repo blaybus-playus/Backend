@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.playus.global.exception.TokenError;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import io.jsonwebtoken.security.SignatureException;
 
@@ -16,13 +17,14 @@ import java.util.Date;
 
 @Slf4j(topic = "JwtUtil")
 @RequiredArgsConstructor
+@Component
 public class JwtUtil {
     public static final Long ACCESS_TOKEN_EXPIRATION = 60 * 60 * 1000L; // 60분
     public static final Long REFRESH_TOKEN_EXPIRATION = 24 * 60 * 60 * 1000L; // 1일
     public static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
 
-    private static final Key key = Keys.hmacShaKeyFor(Base64.getDecoder().decode(System.getenv("${jwt.secret.key}")));
+    private static final Key key = Keys.hmacShaKeyFor(Base64.getDecoder().decode(System.getenv("JWT_SECRET_KEY")));
 
     public static String createToken(String username, Long expiresIn) {
         Date date = new Date(System.currentTimeMillis() + expiresIn * 1000);
