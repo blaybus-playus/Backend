@@ -9,7 +9,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
 @Configuration
-@EnableMongoRepositories(basePackages = "org.example.playus.domain.employee")
+@EnableMongoRepositories(basePackages = {"org.example.playus.domain.employee", "org.example.playus.domain.quest"})
 public class MongoConfig {
 
     @Value("${spring.data.mongodb.uri}")
