@@ -3,6 +3,7 @@ package org.example.playus.domain.sheet;
 import org.example.playus.domain.employee.Account;
 import org.example.playus.domain.employee.Employee;
 import org.example.playus.domain.employee.PersonalInfo;
+import org.example.playus.domain.quest.groupGuset.*;
 
 import java.util.*;
 
@@ -10,24 +11,17 @@ public class GoogleSheetsConvert {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GoogleSheetsConvert.class);
 
+    // TODO : 코드 수정 필요 (너무 복잠함)
     public static List<Employee> convertToUsers(List<List<Object>> sheetData) {
         List<Employee> employees = new ArrayList<>();
+        log.info("Sheet data: {}", sheetData);
 
-        if (sheetData.isEmpty()) {
-            log.warn("Sheet data is empty.");
-            return employees;
+        // 헤더 추출 및 헤더 맵 생성
+        List<Object> headers = extractHeaders(sheetData);
+        if (headers.isEmpty()) {
+            return employees; // 빈 데이터 반환
         }
-
-        // 첫 번째 줄에서 헤더 정보를 추출
-        List<Object> headers = sheetData.get(0);
-        Map<String, Integer> headerIndexMap = new HashMap<>();
-        for (int i = 0; i < headers.size(); i++) {
-            headerIndexMap.put(headers.get(i).toString(), i);
-        }
-
-        // 헤더 확인
-        log.info("Headers: {}", headers);
-        log.info("Header Index Map: {}", headerIndexMap);
+        Map<String, Integer> headerIndexMap = createHeaderIndexMap(headers);
 
         // 필수 헤더 이름 정의
         String[] requiredHeaders = {
@@ -37,24 +31,9 @@ public class GoogleSheetsConvert {
                 "2017년", "2016년", "2015년", "2014년", "2013년"
         };
 
-        // 필요한 헤더가 모두 있는지 확인
-        for (String header : requiredHeaders) {
-            if (!headerIndexMap.containsKey(header)) {
-                throw new IllegalArgumentException("헤더에 '" + header + "' 열이 없습니다.");
-            }
-        }
-
         // 데이터 행 처리
         for (int i = 1; i < sheetData.size(); i++) { // 첫 번째 줄은 헤더로 간주
             List<Object> row = sheetData.get(i);
-
-            // 데이터가 누락되지 않았는지 확인
-            if (row.size() < headers.size()) {
-                log.warn("Skipping row {}: Missing data (Expected size: {}, Actual size: {})", i, headers.size(), row.size());
-                continue;
-            }
-
-            log.info("Processing row {}: {}", i, row);
 
             // User 객체 생성
             Employee employee = new Employee();
@@ -99,12 +78,65 @@ public class GoogleSheetsConvert {
             }
             employee.setPoints(points);
 
-            log.info("Employee created: {}", employee);
-
             employees.add(employee);
         }
-
-        log.info("Total employees processed: {}", employees.size());
         return employees;
     }
+
+    public static List<GroupQuest> convertToGroupQuest(List<List<Object>> groupData, List<List<Object>> expPerWeekData) {
+        List<GroupQuest> groupQuests = new ArrayList<>();
+
+        // 헤더 추출
+        Map<String, Integer> groupHeaderIndexMap = createHeaderIndexMap(extractHeaders(groupData));
+        Map<String, Integer> expPerWeekHeaderIndexMap = createHeaderIndexMap(extractHeaders(expPerWeekData));
+
+        // GroupData에서 기본 정보 추출
+        String affiliation = groupData.get(1).get(groupHeaderIndexMap.get("소속")).toString();
+        int department = Integer.parseInt(groupData.get(1).get(groupHeaderIndexMap.get("직무그룹")).toString());
+        String period = groupData.get(1).get(groupHeaderIndexMap.get("주기")).toString();
+
+        // 모든 주차별 경험치 정보 생성
+        List<GroupExperience> groupExperiences = new ArrayList<>();
+        for (int i = 1; i < expPerWeekData.size(); i++) {
+            List<Object> expRow = expPerWeekData.get(i);
+            GroupExperience experience = GroupExperience.builder()
+                    .week(Integer.parseInt(expRow.get(expPerWeekHeaderIndexMap.get("주차")).toString()))
+                    .experience(expRow.get(expPerWeekHeaderIndexMap.get("부여 경험치")) != null
+                            ? Integer.parseInt(expRow.get(expPerWeekHeaderIndexMap.get("부여 경험치")).toString()) : 0)
+                    .etc(expRow.get(expPerWeekHeaderIndexMap.get("비고")) == null
+                            ? "" : expRow.get(expPerWeekHeaderIndexMap.get("비고")).toString())
+                    .build();
+            groupExperiences.add(experience);
+        }
+
+        // GroupQuest 생성
+        GroupQuest groupQuest = GroupQuest.builder()
+                .affiliation(affiliation)
+                .department(department)
+                .period(period)
+                .groupExperiences(groupExperiences)
+                .build();
+
+        groupQuests.add(groupQuest);
+        return groupQuests;
+    }
+
+    // SheetData Empty 확인 및 헤더 추출
+    private static List<Object> extractHeaders(List<List<Object>> sheetData) {
+        if (sheetData.isEmpty()) {
+            log.warn("Sheet data is empty.");
+            return Collections.emptyList();
+        }
+        return sheetData.get(0); // 첫 번째 줄 반환
+    }
+
+    // 헤더 맵 생성
+    private static Map<String, Integer> createHeaderIndexMap(List<Object> headers) {
+        Map<String, Integer> headerIndexMap = new HashMap<>();
+        for (int i = 0; i < headers.size(); i++) {
+            headerIndexMap.put(headers.get(i).toString(), i);
+        }
+        return headerIndexMap;
+    }
 }
+
