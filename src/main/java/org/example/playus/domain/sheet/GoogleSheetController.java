@@ -21,8 +21,9 @@ public class GoogleSheetController {
     @Value("${google.spreadsheet.id}")
     private String spreadSheetId; // 스프레드시트 ID
 
-    // TODO : 셀 범위를 수정해야 함
     private static final String RANGE = "요구사항!B2:D2"; // 읽을 셀 범위
+    private static final String EmployeeRANGE = "시트10!B2:V"; // 읽을 셀 범위
+    private static final String GroupQuestRANGE = "직무퀘 음성 1센터 1그룹의 사본"; // 읽을 셀 범위
 
     @GetMapping("/read")
     @Operation(summary = "sheet read", description = "데이터 조회하는 기능")
@@ -36,11 +37,33 @@ public class GoogleSheetController {
         }
     }
 
+
     @PostMapping("/sync")
     @Operation(summary = "sheet sync", description = "데이터 동기화기능")
     public ResponseEntity<String> syncUsers() {
         try {
-            googleSheetService.syncGoogleSheetToMongo(spreadSheetId, "시트10!B2:V");
+            googleSheetService.syncGoogleSheetToMongo(spreadSheetId, EmployeeRANGE);
+            return ResponseEntity.ok("데이터 동기화 완료");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("동기화 실패: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("sync/group/quest")
+    public ResponseEntity<String> syncGroupQuest() {
+        try {
+            googleSheetService.syncGroupQuest(spreadSheetId, GroupQuestRANGE);
+            return ResponseEntity.ok("그룹 퀘스트 동기화 완료");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("그룹 퀘스트 동기화 실패: " + e.getMessage());
+        }
+    }
+    @PutMapping("/sync")
+    public ResponseEntity<String> syncSheetAndMongo() {
+        try {
+            googleSheetService.syncAll(spreadSheetId, EmployeeRANGE, GroupQuestRANGE);
             return ResponseEntity.ok("데이터 동기화 완료");
         } catch (Exception e) {
             e.printStackTrace();
