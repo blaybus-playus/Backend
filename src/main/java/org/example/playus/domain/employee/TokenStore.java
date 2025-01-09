@@ -26,4 +26,10 @@ public class TokenStore {
         this.accessToken = null;
         this.refreshToken = null;
     }
+
+    public boolean isEmpty() {
+        return (this.accessToken == null || this.accessToken.isBlank()) &&
+                (this.refreshToken == null || this.refreshToken.isBlank());
+    }
+
 }
