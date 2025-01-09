@@ -35,6 +35,23 @@ public class GoogleSheetsConvert {
         for (int i = 1; i < sheetData.size(); i++) { // 첫 번째 줄은 헤더로 간주
             List<Object> row = sheetData.get(i);
 
+
+            // 데이터가 누락되지 않았는지 확인
+//            if (row.size() < headers.size()) {
+//                log.warn("Skipping row {}: Missing data (Expected size: {}, Actual size: {})", i, headers.size(), row.size());
+//                continue;
+//            }
+//
+            if (row.isEmpty() || row.stream().allMatch(cell -> cell.toString().isBlank())) {
+                log.warn("Row {} is empty and will be skipped.", i);
+                continue;
+            }
+            while (row.size() < headers.size()) {
+                row.add("");  // 문자열 기본값으로 빈 문자열, 숫자는 "0"
+            }
+
+            log.info("Processing row {}: {}", i, row);
+
             // User 객체 생성
             Employee employee = new Employee();
             employee.setEmployeeId(row.get(headerIndexMap.get("사번")).toString());

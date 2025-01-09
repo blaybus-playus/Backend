@@ -4,6 +4,7 @@ import lombok.Getter;
 
 @Getter
 public class PersonalInfo {
+
     private String name;         // 이름
     private String joinDate;     // 입사일
     private String department;   // 소속
@@ -11,6 +12,7 @@ public class PersonalInfo {
     private String level;        // 레벨
 
     // Getters and Setters
+
     public void setName(String name) {
         this.name = name;
     }

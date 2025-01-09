@@ -7,6 +7,7 @@ import lombok.Setter;
 
 import org.example.playus.domain.employee.PersonalInfo;
 import org.example.playus.domain.employee.Account;
+import org.example.playus.domain.employee.TokenStore;
 
 import java.util.Map;
 
@@ -17,13 +18,15 @@ public class LoginResponseDto {
     private String employeeId;
     private PersonalInfo personalInfo;
     private Account account;
+    private TokenStore tokenStore;
     private Map<String, Integer> points;
 
     @Builder
-    public LoginResponseDto(String employeeId, PersonalInfo personalInfo, Account account, Map<String, Integer> points) {
+    public LoginResponseDto(String employeeId, PersonalInfo personalInfo, Account account,TokenStore tokenStore ,Map<String, Integer> points) {
         this.employeeId = employeeId;
         this.personalInfo = personalInfo;
         this.account = account;
+        this.tokenStore = tokenStore;
         this.points = points;
     }
 }

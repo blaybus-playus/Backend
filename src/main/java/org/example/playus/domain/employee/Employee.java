@@ -16,6 +16,7 @@ public class Employee {
     private PersonalInfo personalInfo; // 하위 문서
     private Account account;         // 하위 문서
     private Map<String, Integer> points; // 연도별 포인트 데이터를 Map으로 저장
+    private TokenStore tokenStore;
 
     public void setEmployeeId(String employeeId) {
         this.employeeId = employeeId;
@@ -32,5 +33,7 @@ public class Employee {
     public void setPoints(Map<String, Integer> points) {
         this.points = points;
     }
+
+    public void setTokenStore(TokenStore tokenStore) {this.tokenStore = tokenStore;}
 }
 
