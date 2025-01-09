@@ -49,9 +49,17 @@ public class GoogleSheetsConvert {
             List<Object> row = sheetData.get(i);
 
             // 데이터가 누락되지 않았는지 확인
-            if (row.size() < headers.size()) {
-                log.warn("Skipping row {}: Missing data (Expected size: {}, Actual size: {})", i, headers.size(), row.size());
+//            if (row.size() < headers.size()) {
+//                log.warn("Skipping row {}: Missing data (Expected size: {}, Actual size: {})", i, headers.size(), row.size());
+//                continue;
+//            }
+//
+            if (row.isEmpty() || row.stream().allMatch(cell -> cell.toString().isBlank())) {
+                log.warn("Row {} is empty and will be skipped.", i);
                 continue;
+            }
+            while (row.size() < headers.size()) {
+                row.add("");  // 문자열 기본값으로 빈 문자열, 숫자는 "0"
             }
 
             log.info("Processing row {}: {}", i, row);

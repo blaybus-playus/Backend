@@ -25,7 +25,7 @@ public class GoogleSheetController {
     private static final String RANGE = "요구사항!B2:D2"; // 읽을 셀 범위
 
     @GetMapping("/read")
-    @Operation(summary = "sheet read", description = "조회하는 기능입니다.")
+    @Operation(summary = "sheet read", description = "데이터 조회하는 기능")
     public ResponseEntity<List<Object>> readFromSheet() {
         try {
             List<Object> data = googleSheetService.getSheetData(spreadSheetId, RANGE);
@@ -37,6 +37,7 @@ public class GoogleSheetController {
     }
 
     @PostMapping("/sync")
+    @Operation(summary = "sheet sync", description = "데이터 동기화기능")
     public ResponseEntity<String> syncUsers() {
         try {
             googleSheetService.syncGoogleSheetToMongo(spreadSheetId, "시트10!B2:V");
