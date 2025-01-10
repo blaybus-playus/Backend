@@ -14,8 +14,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -50,7 +55,16 @@ public class SignupService {
                 .build();
 
         String joinDate = requestDto.getPersonalInfo().getJoinDate();
-        String employeeId = generateEmployeeId(joinDate);
+        if (!isValidDateFormat(joinDate)) {
+            throw new CustomException(ErrorCode.BAD_REQUEST);  // 잘못된 요청 예외
+        }
+
+        String employeeId;
+        try {
+            employeeId = generateEmployeeId(joinDate);
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);  // 서버 내부 오류 예외
+        }
 
         Employee employee = new Employee();
         employee.setEmployeeId(employeeId);
@@ -60,10 +74,8 @@ public class SignupService {
 
         try {
             employeeRepositoryMongo.save(employee);
-            log.info("Successfully saved employee to MongoDB with ID: {}", employeeId);
         } catch (Exception e) {
-            log.error("Failed to save employee to MongoDB: ", e);
-            throw new RuntimeException("Failed to save employee to MongoDB: " + e.getMessage());
+            throw new CustomException(ErrorCode.EMPLOYEE_EXIST);  // 사번 중복 저장 오류
         }
 
         try {
@@ -71,11 +83,9 @@ public class SignupService {
             List<Object> row = convertEmployeeToSpreadsheetRow(employee);
 
             googleSheetsHelper.appendRow(spreadsheetId, range, row);
-            log.info("Successfully appended data to Google Sheets for employee ID: {}", employeeId);
         } catch (Exception e) {
-            log.error("Failed to append data to Google Sheets: ", e);
             throw new RuntimeException("Failed to append data to Google Sheets: " + e.getMessage());
-        }
+        } // Errorcode enum 생성 
 
         return SignupResponseDto.builder()
                 .success(true)
@@ -85,7 +95,7 @@ public class SignupService {
 
     private String generateEmployeeId(String joinDate) {
         // `joinDate`를 "yyyyMMdd" 형식으로 변환
-        String formattedDate = joinDate.replace("-", "");  // 예: 2019-09-01 → 20190901
+        String formattedDate = joinDate.replace("-", "");  // 예: 2025-01-01 → 20250101
 
         // 해당 입사일의 직원 목록 조회
         List<Employee> employees = employeeRepositoryMongo.findByPersonalInfoJoinDate(joinDate);
@@ -101,7 +111,7 @@ public class SignupService {
         int newNumber = maxNumber + 1;
         String formattedNumber = String.format("%02d", newNumber);  // 두 자리 숫자로 포맷
 
-        // 최종 사번 반환 (예: 2019090101)
+        // 최종 사번 반환 (예: 2025010101)
         return formattedDate + formattedNumber;
     }
 
@@ -159,4 +169,13 @@ public class SignupService {
                 .collect(Collectors.toMap(year -> year, year -> 0));
     }
 
+}
+    private boolean isValidDateFormat(String date) {
+        try {
+            LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            return true;
+        } catch (DateTimeParseException e) {
+            return false;
+        }
+    }
 }
