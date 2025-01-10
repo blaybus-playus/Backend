@@ -104,13 +104,15 @@ public class GoogleSheetService {
 
             String groupRange = range + "!B2:D3";
             String expPerWeekRange = range + "!B5:D";
+            String scoreInfo = range + "!F2:G3";
 
             // 각 범위의 데이터 읽기
             List<List<Object>> groupData = googleSheetsHelper.readSheetData(spreadSheetId, groupRange);
             List<List<Object>> expPerWeekData = googleSheetsHelper.readSheetData(spreadSheetId, expPerWeekRange);
+            List<List<Object>> scoreData = googleSheetsHelper.readSheetData(spreadSheetId, scoreInfo);
 
             // 데이터를 변환
-            List<GroupQuest> groupQuests = GoogleSheetsConvert.convertToGroupQuest(groupData, expPerWeekData);
+            List<GroupQuest> groupQuests = GoogleSheetsConvert.convertToGroupQuest(groupData, expPerWeekData, scoreData);
 
             // MongoDB에 저장
             groupQuestRepositoryMongo.saveAll(groupQuests);
@@ -137,11 +139,14 @@ public class GoogleSheetService {
     private void syncGroupQuestData(String spreadSheetId, String groupQuestRange) throws Exception {
         String groupRange = groupQuestRange + "!B2:D3";
         String expPerWeekRange = groupQuestRange + "!B5:D";
+        String scoreInfo = groupQuestRange + "!F2:G3";
 
         List<List<Object>> groupData = googleSheetsHelper.readSheetData(spreadSheetId, groupRange);
         List<List<Object>> expPerWeekData = googleSheetsHelper.readSheetData(spreadSheetId, expPerWeekRange);
+        List<List<Object>> scoreData = googleSheetsHelper.readSheetData(spreadSheetId, scoreInfo);
 
-        List<GroupQuest> newGroupQuests = GoogleSheetsConvert.convertToGroupQuest(groupData, expPerWeekData);
+
+        List<GroupQuest> newGroupQuests = GoogleSheetsConvert.convertToGroupQuest(groupData, expPerWeekData, scoreData);
 
         for (GroupQuest newQuest : newGroupQuests) {
             // 먼저 기존의 모든 중복 데이터 삭제

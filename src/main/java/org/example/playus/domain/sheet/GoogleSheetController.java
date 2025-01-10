@@ -23,7 +23,7 @@ public class GoogleSheetController {
 
     private static final String RANGE = "요구사항!B2:D2"; // 읽을 셀 범위
     private static final String EmployeeRANGE = "시트10!B2:V"; // 읽을 셀 범위
-    private static final String GroupQuestRANGE = "직무퀘 음성 1센터 1그룹의 사본"; // 읽을 셀 범위
+    private static final String GroupQuestRANGE = "직무퀘 음성 1센터 1그룹"; // 읽을 셀 범위
 
     @GetMapping("/read")
     @Operation(summary = "sheet read", description = "데이터 조회하는 기능")

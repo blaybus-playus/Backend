@@ -100,17 +100,20 @@ public class GoogleSheetsConvert {
         return employees;
     }
 
-    public static List<GroupQuest> convertToGroupQuest(List<List<Object>> groupData, List<List<Object>> expPerWeekData) {
+    public static List<GroupQuest> convertToGroupQuest(List<List<Object>> groupData, List<List<Object>> expPerWeekData, List<List<Object>> scoreData) {
         List<GroupQuest> groupQuests = new ArrayList<>();
 
         // 헤더 추출
         Map<String, Integer> groupHeaderIndexMap = createHeaderIndexMap(extractHeaders(groupData));
         Map<String, Integer> expPerWeekHeaderIndexMap = createHeaderIndexMap(extractHeaders(expPerWeekData));
+        Map<String, Integer> scoreHeaderIndexMap = createHeaderIndexMap(extractHeaders(scoreData));
 
         // GroupData에서 기본 정보 추출
         String affiliation = groupData.get(1).get(groupHeaderIndexMap.get("소속")).toString();
         int department = Integer.parseInt(groupData.get(1).get(groupHeaderIndexMap.get("직무그룹")).toString());
         String period = groupData.get(1).get(groupHeaderIndexMap.get("주기")).toString();
+        int maxScore = Integer.parseInt(scoreData.get(1).get(scoreHeaderIndexMap.get("MAX 점수")).toString());
+        int mediumScore = Integer.parseInt(scoreData.get(1).get(scoreHeaderIndexMap.get("MEDIUM 점수")).toString());
 
         // 모든 주차별 경험치 정보 생성
         List<GroupExperience> groupExperiences = new ArrayList<>();
@@ -131,6 +134,8 @@ public class GoogleSheetsConvert {
                 .affiliation(affiliation)
                 .department(department)
                 .period(period)
+                .maxScore(maxScore)
+                .mediumScore(mediumScore)
                 .groupExperiences(groupExperiences)
                 .build();
 
