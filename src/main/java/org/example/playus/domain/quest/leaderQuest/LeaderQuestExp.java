@@ -5,14 +5,14 @@ import lombok.Getter;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Getter
-@Document(collection = "leaderQuestExp")
-public class leaderQuestExp {
+@Document(collection = "LeaderQuestExp")
+public class LeaderQuestExp {
     private String affiliation; // 소속
 
     private LeaderQuestEmployeeList leaderQuestEmployeeList; // 리더 퀘스트 직원
 
     @Builder
-    public leaderQuestExp(String affiliation, LeaderQuestEmployeeList leaderQuestEmployeeList) {
+    public LeaderQuestExp(String affiliation, LeaderQuestEmployeeList leaderQuestEmployeeList) {
         this.affiliation = affiliation;
         this.leaderQuestEmployeeList = leaderQuestEmployeeList;
     }

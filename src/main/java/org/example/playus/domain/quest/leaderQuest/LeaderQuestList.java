@@ -15,7 +15,8 @@ public class LeaderQuestList {
     private String requireForMedium; // 중간 점수 요구 사항
 
     @Builder
-    public LeaderQuestList(String questName, String period, int totalScore, int maxScore, int mediumScore, String requireForMax, String requireForMedium) {
+    public LeaderQuestList(String id, String questName, String period, int totalScore, int maxScore, int mediumScore, String requireForMax, String requireForMedium) {
+        this.id = id;
         this.questName = questName;
         this.period = period;
         this.totalScore = totalScore;

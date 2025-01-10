@@ -4,6 +4,10 @@ import org.example.playus.domain.employee.Account;
 import org.example.playus.domain.employee.Employee;
 import org.example.playus.domain.employee.PersonalInfo;
 import org.example.playus.domain.quest.groupGuset.*;
+import org.example.playus.domain.quest.leaderQuest.LeaderQuest;
+import org.example.playus.domain.quest.leaderQuest.LeaderQuestEmployeeList;
+import org.example.playus.domain.quest.leaderQuest.LeaderQuestExp;
+import org.example.playus.domain.quest.leaderQuest.LeaderQuestList;
 
 import java.util.*;
 
@@ -141,6 +145,63 @@ public class GoogleSheetsConvert {
 
         groupQuests.add(groupQuest);
         return groupQuests;
+    }
+
+    private static List<LeaderQuest> convertToLeaderQuest(Object affiliationData, List<List<Object>> leaderQuestListData) {
+        List<LeaderQuest> leaderQuests = new ArrayList<>();
+
+        // 소속 정보 추출
+        String affiliation = affiliationData.toString();
+
+        // 헤더 추출
+        Map<String, Integer> leaderQuestHeaderIndexMap = createHeaderIndexMap(extractHeaders(leaderQuestListData));
+
+        // 리더 퀘스트 목록 생성
+        for (int i = 1; i < leaderQuestListData.size(); i++) {
+            List<Object> leaderQuestRow = leaderQuestListData.get(i);
+            LeaderQuest leaderQuest = LeaderQuest.builder()
+                    .affiliation(affiliation)
+                    .leaderQuestList(LeaderQuestList.builder()
+                            .id(affiliation + "-" + i)
+                            .questName(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("퀘스트명")).toString())
+                            .period(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("획득주기")).toString())
+                            .totalScore(Integer.parseInt(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("경험치")).toString()))
+                            .maxScore(Integer.parseInt(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Max")).toString()))
+                            .mediumScore(Integer.parseInt(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Median")).toString()))
+                            .requireForMax(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Max조건")).toString())
+                            .requireForMedium(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Median조건")).toString())
+                            .build())
+                    .build();
+            leaderQuests.add(leaderQuest);
+        }
+
+        return leaderQuests;
+    }
+
+    private static List<LeaderQuestExp> convertToLeaderQuestExp(Object affiliation, List<List<Object>> leaderQuestExpData) {
+        List<LeaderQuestExp> leaderQuestExps = new ArrayList<>();
+
+        // 헤더 추출
+        Map<String, Integer> leaderQuestExpHeaderIndexMap = createHeaderIndexMap(extractHeaders(leaderQuestExpData));
+
+        // 리더 퀘스트 경험치 생성
+        for (int i = 1; i < leaderQuestExpData.size(); i++) {
+            List<Object> leaderQuestExpRow = leaderQuestExpData.get(i);
+            LeaderQuestExp leaderQuestExp = LeaderQuestExp.builder()
+                    .affiliation(affiliation.toString())
+                    .leaderQuestEmployeeList(LeaderQuestEmployeeList.builder()
+                            .month(Integer.parseInt(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("월")).toString()))
+                            .employeeId(Integer.parseInt(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("사번")).toString()))
+                            .employeeName(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("대상자")).toString())
+                            .questName(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("리더 부여 퀘스트명")).toString())
+                            .achievement(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("달성내용")).toString())
+                            .score(Integer.parseInt(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("부여 경험치")).toString()))
+                            .build())
+                    .build();
+            leaderQuestExps.add(leaderQuestExp);
+        }
+
+        return leaderQuestExps;
     }
 
     // SheetData Empty 확인 및 헤더 추출
