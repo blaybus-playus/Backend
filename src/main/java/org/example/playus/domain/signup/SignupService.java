@@ -169,7 +169,6 @@ public class SignupService {
                 .collect(Collectors.toMap(year -> year, year -> 0));
     }
 
-}
     private boolean isValidDateFormat(String date) {
         try {
             LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
