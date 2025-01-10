@@ -39,13 +39,6 @@ public class GoogleSheetsConvert {
         for (int i = 1; i < sheetData.size(); i++) { // 첫 번째 줄은 헤더로 간주
             List<Object> row = sheetData.get(i);
 
-
-            // 데이터가 누락되지 않았는지 확인
-//            if (row.size() < headers.size()) {
-//                log.warn("Skipping row {}: Missing data (Expected size: {}, Actual size: {})", i, headers.size(), row.size());
-//                continue;
-//            }
-//
             if (row.isEmpty() || row.stream().allMatch(cell -> cell.toString().isBlank())) {
                 log.warn("Row {} is empty and will be skipped.", i);
                 continue;
@@ -147,11 +140,8 @@ public class GoogleSheetsConvert {
         return groupQuests;
     }
 
-    private static List<LeaderQuest> convertToLeaderQuest(Object affiliationData, List<List<Object>> leaderQuestListData) {
+    public static List<LeaderQuest> convertToLeaderQuest(String affiliation, List<List<Object>> leaderQuestListData) {
         List<LeaderQuest> leaderQuests = new ArrayList<>();
-
-        // 소속 정보 추출
-        String affiliation = affiliationData.toString();
 
         // 헤더 추출
         Map<String, Integer> leaderQuestHeaderIndexMap = createHeaderIndexMap(extractHeaders(leaderQuestListData));
@@ -159,17 +149,30 @@ public class GoogleSheetsConvert {
         // 리더 퀘스트 목록 생성
         for (int i = 1; i < leaderQuestListData.size(); i++) {
             List<Object> leaderQuestRow = leaderQuestListData.get(i);
+
+            // 비어있는 값을 빈 문자열로 설정
+            while (leaderQuestRow.size() < leaderQuestHeaderIndexMap.size()) {
+                leaderQuestRow.add("");
+            }
+
             LeaderQuest leaderQuest = LeaderQuest.builder()
                     .affiliation(affiliation)
                     .leaderQuestList(LeaderQuestList.builder()
                             .id(affiliation + "-" + i)
-                            .questName(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("퀘스트명")).toString())
-                            .period(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("획득주기")).toString())
-                            .totalScore(Integer.parseInt(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("경험치")).toString()))
-                            .maxScore(Integer.parseInt(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Max")).toString()))
-                            .mediumScore(Integer.parseInt(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Median")).toString()))
-                            .requireForMax(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Max조건")).toString())
-                            .requireForMedium(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Median조건")).toString())
+                            .questName(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("퀘스트명")) == null
+                                    ? "" : leaderQuestRow.get(leaderQuestHeaderIndexMap.get("퀘스트명")).toString())
+                            .period(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("획득주기")) == null
+                                    ? "" : leaderQuestRow.get(leaderQuestHeaderIndexMap.get("획득주기")).toString())
+                            .totalScore(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("경험치")) == null
+                                    ? "" : leaderQuestRow.get(leaderQuestHeaderIndexMap.get("경험치")).toString())
+                            .maxScore(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Max")) != null && !leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Max")).toString().isEmpty()
+                                    ? Integer.parseInt(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Max")).toString()) : 0)
+                            .mediumScore(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Median")) != null && !leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Median")).toString().isEmpty()
+                                    ? Integer.parseInt(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Median")).toString()) : 0)
+                            .requireForMax(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Max조건")) == null
+                                    ? "" : leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Max조건")).toString())
+                            .requireForMedium(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Median조건")) == null
+                                    ? "" : leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Median조건")).toString())
                             .build())
                     .build();
             leaderQuests.add(leaderQuest);

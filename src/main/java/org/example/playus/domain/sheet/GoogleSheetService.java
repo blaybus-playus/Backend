@@ -10,6 +10,8 @@ import org.example.playus.domain.quest.groupGuset.GroupExperience;
 import org.example.playus.domain.quest.groupGuset.GroupQuest;
 import org.example.playus.domain.quest.groupGuset.GroupQuestRepositoryMongo;
 import org.example.playus.domain.quest.groupGuset.WeeklyInfoRepositoryMongo;
+import org.example.playus.domain.quest.leaderQuest.LeaderQuest;
+import org.example.playus.domain.quest.leaderQuest.LeaderQuestRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +36,11 @@ public class GoogleSheetService {
     private EmployeeRepositoryMongo employeeRepositoryMongo;
     @Autowired
     private GroupQuestRepositoryMongo groupQuestRepositoryMongo;
+    @Autowired
+    private LeaderQuestRepository leaderQuestRepository;
 
+
+    // TODO : Google Sheets API를 Service layer에서 분리해야 함
     public List<Object> getSheetData(String spreadsheetId, String range) throws IOException, GeneralSecurityException {
         try {
             // GoogleCredential 생성
@@ -97,26 +103,11 @@ public class GoogleSheetService {
     }
 
     @Transactional
-    public void syncGroupQuest(String spreadSheetId, String range) throws Exception {
-        try {
-            // 데이터를 변환
-            List<GroupQuest> groupQuests = moduleGroupQuestData(spreadSheetId, range);
-
-            // MongoDB에 저장
-            groupQuestRepositoryMongo.saveAll(groupQuests);
-
-            log.info("Successfully synced GroupQuest and WeeklyInfo data to MongoDB.");
-
-        } catch (Exception e) {
-            log.error("Error while syncing Google Sheets to MongoDB: ", e); // 예외 발생 시 로그 남기기
-            throw new RuntimeException("Error while syncing Google Sheets to MongoDB: " + e.getMessage());
-        }
-    }
-
-    @Transactional
-    public void syncAll(String spreadSheetId, String employeeRange, String groupQuestRange) {
+    public void syncAll(String spreadSheetId, String employeeRange, String groupQuestRange, String leaderQuestRange) {
         try {
             syncGroupQuestData(spreadSheetId, groupQuestRange);
+            syncLeaderQuestData(spreadSheetId, leaderQuestRange);
+
             log.info("GroupQuest 데이터 동기화 완료");
         } catch (Exception e) {
             log.error("Google Sheets 동기화 중 오류 발생: ", e);
@@ -152,6 +143,35 @@ public class GoogleSheetService {
                 groupQuestRepositoryMongo.save(newQuest);
                 log.info("새로운 GroupQuest 데이터 저장 완료: {}", newQuest.getAffiliation());
             }
+        }
+    }
+
+    @Transactional
+    public void syncLeaderQuestData(String spreadSheetId, String leaderRange) {
+        try {
+
+            String affiliationRange = leaderRange + "!J8";
+            String affiliation = googleSheetsHelper.readCell(spreadSheetId, affiliationRange);
+
+            String leaderQuestRange = leaderRange + "!J10:Q13";
+            List<List<Object>> leaderQuestData = googleSheetsHelper.readSheetData(spreadSheetId, leaderQuestRange);
+
+            List<LeaderQuest> newLeaderQuests = GoogleSheetsConvert.convertToLeaderQuest(affiliation, leaderQuestData);
+
+            // 기존 데이터 삭제
+            List<LeaderQuest> existingLeaderQuests = leaderQuestRepository.findAllByAffiliation(affiliation);
+            if (!existingLeaderQuests.isEmpty()) {
+                leaderQuestRepository.deleteAll(existingLeaderQuests);
+                log.info("기존 LeaderQuest 데이터 삭제 완료: {}", affiliation);
+            }
+
+            // 새로운 데이터 저장
+            leaderQuestRepository.saveAll(newLeaderQuests);
+            log.info("새로운 LeaderQuest 데이터 저장 완료: {}", affiliation);
+
+        } catch (Exception e) {
+            log.error("Google Sheets 동기화 중 오류 발생: ", e);
+            throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
         }
     }
 
