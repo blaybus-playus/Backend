@@ -34,8 +34,6 @@ public class GoogleSheetService {
     private EmployeeRepositoryMongo employeeRepositoryMongo;
     @Autowired
     private GroupQuestRepositoryMongo groupQuestRepositoryMongo;
-    @Autowired
-    private WeeklyInfoRepositoryMongo weeklyInfoRepositoryMongo;
 
     public List<Object> getSheetData(String spreadsheetId, String range) throws IOException, GeneralSecurityException {
         try {
@@ -101,18 +99,8 @@ public class GoogleSheetService {
     @Transactional
     public void syncGroupQuest(String spreadSheetId, String range) throws Exception {
         try {
-
-            String groupRange = range + "!B2:D3";
-            String expPerWeekRange = range + "!B5:D";
-            String scoreInfo = range + "!F2:G3";
-
-            // 각 범위의 데이터 읽기
-            List<List<Object>> groupData = googleSheetsHelper.readSheetData(spreadSheetId, groupRange);
-            List<List<Object>> expPerWeekData = googleSheetsHelper.readSheetData(spreadSheetId, expPerWeekRange);
-            List<List<Object>> scoreData = googleSheetsHelper.readSheetData(spreadSheetId, scoreInfo);
-
             // 데이터를 변환
-            List<GroupQuest> groupQuests = GoogleSheetsConvert.convertToGroupQuest(groupData, expPerWeekData, scoreData);
+            List<GroupQuest> groupQuests = moduleGroupQuestData(spreadSheetId, range);
 
             // MongoDB에 저장
             groupQuestRepositoryMongo.saveAll(groupQuests);
@@ -137,16 +125,8 @@ public class GoogleSheetService {
     }
 
     private void syncGroupQuestData(String spreadSheetId, String groupQuestRange) throws Exception {
-        String groupRange = groupQuestRange + "!B2:D3";
-        String expPerWeekRange = groupQuestRange + "!B5:D";
-        String scoreInfo = groupQuestRange + "!F2:G3";
 
-        List<List<Object>> groupData = googleSheetsHelper.readSheetData(spreadSheetId, groupRange);
-        List<List<Object>> expPerWeekData = googleSheetsHelper.readSheetData(spreadSheetId, expPerWeekRange);
-        List<List<Object>> scoreData = googleSheetsHelper.readSheetData(spreadSheetId, scoreInfo);
-
-
-        List<GroupQuest> newGroupQuests = GoogleSheetsConvert.convertToGroupQuest(groupData, expPerWeekData, scoreData);
+        List<GroupQuest> newGroupQuests = moduleGroupQuestData(spreadSheetId, groupQuestRange);
 
         for (GroupQuest newQuest : newGroupQuests) {
             // 먼저 기존의 모든 중복 데이터 삭제
@@ -173,5 +153,18 @@ public class GoogleSheetService {
                 log.info("새로운 GroupQuest 데이터 저장 완료: {}", newQuest.getAffiliation());
             }
         }
+    }
+
+    private List<GroupQuest> moduleGroupQuestData(String spreadSheetId, String groupQuestRange) throws Exception {
+        String groupRange = groupQuestRange + "!B2:D3";
+        String expPerWeekRange = groupQuestRange + "!B5:D";
+        String scoreInfo = groupQuestRange + "!F2:G3";
+
+        List<List<Object>> groupData = googleSheetsHelper.readSheetData(spreadSheetId, groupRange);
+        List<List<Object>> expPerWeekData = googleSheetsHelper.readSheetData(spreadSheetId, expPerWeekRange);
+        List<List<Object>> scoreData = googleSheetsHelper.readSheetData(spreadSheetId, scoreInfo);
+
+        List<GroupQuest> groupQuestList = GoogleSheetsConvert.convertToGroupQuest(groupData, expPerWeekData, scoreData);
+        return groupQuestList;
     }
 }
