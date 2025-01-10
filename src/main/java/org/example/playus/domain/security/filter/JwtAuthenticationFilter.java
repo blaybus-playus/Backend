@@ -8,7 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.example.playus.domain.employee.Employee;
 import org.example.playus.domain.employee.EmployeeRepositoryMongo;
-import org.example.playus.domain.login.LoginRequestDto;
+import org.example.playus.domain.login.dto.LoginRequestDto;
 import org.example.playus.domain.security.jwt.JwtUtil;
 import org.example.playus.global.exception.CustomException;
 import org.example.playus.global.exception.ErrorCode;
