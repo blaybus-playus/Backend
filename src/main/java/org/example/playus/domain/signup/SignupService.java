@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -105,18 +106,27 @@ public class SignupService {
     }
 
     private List<Object> convertEmployeeToSpreadsheetRow(Employee employee) {
-        return Arrays.asList(
-                employee.getEmployeeId(),                                // 사번
-                employee.getPersonalInfo().getName(),                   // 이름
-                employee.getPersonalInfo().getJoinDate(),               // 입사일
-                employee.getPersonalInfo().getDepartment(),             // 소속
-                employee.getPersonalInfo().getJobGroup(),               // 직무그룹
-                employee.getPersonalInfo().getLevel(),                  // 레벨
-                employee.getAccount().getUsername(),                    // 아이디
-                employee.getAccount().getDefaultPassword(),             // 기본패스워드
-                employee.getAccount().getUpdatedPassword(),             // 변경패스워드
-                formatPoints(employee.getPoints())                      // 총경험치 등 포인트 데이터
-        );
+        List<Object> row = new ArrayList<>();
+
+        // 기본 정보 추가
+        row.add(employee.getEmployeeId());                              // 사번
+        row.add(employee.getPersonalInfo().getName());                 // 이름
+        row.add(employee.getPersonalInfo().getJoinDate());             // 입사일
+        row.add(employee.getPersonalInfo().getDepartment());           // 소속
+        row.add(employee.getPersonalInfo().getJobGroup());             // 직무그룹
+        row.add(employee.getPersonalInfo().getLevel());                // 레벨
+        row.add(employee.getAccount().getUsername());                  // 아이디
+        row.add(employee.getAccount().getDefaultPassword());           // 기본패스워드
+        row.add(employee.getAccount().getUpdatedPassword());           // 변경패스워드
+
+        // 총경험치 계산
+        int totalPoints = employee.getPoints().values().stream().mapToInt(Integer::intValue).sum();
+        row.add(String.format("%,d", totalPoints));                    // 총경험치 (콤마 포함 형식)
+
+        // 연도별 경험치 추가
+        row.addAll(generateExperienceData(employee.getPoints()));      // 연도별 경험치
+
+        return row;
     }
 
     private String formatPoints(Map<String, Integer> points) {
@@ -128,16 +138,16 @@ public class SignupService {
                 .collect(Collectors.joining(", "));
     }
 
-//    private List<Object> generateExperienceData(Map<String, Integer> points) {
-//        // 2023년부터 2013년까지의 연도 리스트 생성
-//        List<String> years = Arrays.asList("2023년", "2022년", "2021년", "2020년", "2019년",
-//                "2018년", "2017년", "2016년", "2015년", "2014년", "2013년");
-//
-//        // 각 연도에 대해 경험치를 채움 (없으면 0으로 대체)
-//        return years.stream()
-//                .map(year -> points != null && points.containsKey(year) ? points.get(year) : 0)
-//                .collect(Collectors.toList());
-//    }
+    private List<Object> generateExperienceData(Map<String, Integer> points) {
+        List<String> years = Arrays.asList("2023년", "2022년", "2021년", "2020년", "2019년",
+                "2018년", "2017년", "2016년", "2015년", "2014년", "2013년");
+
+        // 각 연도별 경험치 반환 (없으면 0으로 대체)
+        return years.stream()
+                .map(year -> points != null && points.containsKey(year) ? points.get(year) : 0)
+                .collect(Collectors.toList());
+    }
+
 
     private Map<String, Integer> initializePoints() {
         // 2023년부터 2013년까지의 연도 리스트
