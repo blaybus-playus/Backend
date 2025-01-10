@@ -15,20 +15,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-@Tag(name ="SignUp", description = "SignUpController APIs")
+@Tag(name = "SignUp", description = "SignUpController APIs")
 public class SignupController {
     private final SignupService signupService;
 
     @PostMapping("/signup")
     @Operation(summary = "signup", description = "회원가입 기능")
-    public ResponseEntity<CommonResponse> signup(@RequestBody SignupRequestDto requestDto){
-        try {
+    public ResponseEntity<CommonResponse> signup(@RequestBody SignupRequestDto requestDto) {
         SignupResponseDto responseDto = signupService.signup(requestDto);
         CommonResponse response = new CommonResponse<>("회원가입 성공", 200, responseDto);
         return ResponseEntity.ok(response);
-        } catch (Exception e) {
-        CommonResponse response = new CommonResponse<>("회원가입 실패", 500, null);
-        return ResponseEntity.status(500).body(response);
-        }
     }
 }

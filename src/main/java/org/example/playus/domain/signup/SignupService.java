@@ -11,6 +11,9 @@ import org.example.playus.global.exception.ErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 
@@ -33,7 +36,16 @@ public class SignupService {
                 .build();
 
         String joinDate = requestDto.getPersonalInfo().getJoinDate();
-        String employeeId = generateEmployeeId(joinDate);
+        if (!isValidDateFormat(joinDate)) {
+            throw new CustomException(ErrorCode.BAD_REQUEST);  // 잘못된 요청 예외
+        }
+
+        String employeeId;
+        try {
+            employeeId = generateEmployeeId(joinDate);
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);  // 서버 내부 오류 예외
+        }
 
         Employee employee =new Employee();
         employee.setEmployeeId(employeeId);
@@ -41,7 +53,11 @@ public class SignupService {
         employee.setPersonalInfo(requestDto.getPersonalInfo());
         employee.setPoints(new HashMap<>());
 
-        employeeRepositoryMongo.save(employee);
+        try {
+            employeeRepositoryMongo.save(employee);
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.EMPLOYEE_EXIST);  // 사번 중복 저장 오류
+        }
 
         return SignupResponseDto.builder()
                 .success(true)
@@ -51,7 +67,7 @@ public class SignupService {
 
     private String generateEmployeeId(String joinDate) {
         // `joinDate`를 "yyyyMMdd" 형식으로 변환
-        String formattedDate = joinDate.replace("-", "");  // 예: 2019-09-01 → 20190901
+        String formattedDate = joinDate.replace("-", "");  // 예: 2025-01-01 → 20250101
 
         // 해당 입사일의 직원 목록 조회
         List<Employee> employees = employeeRepositoryMongo.findByPersonalInfoJoinDate(joinDate);
@@ -67,7 +83,16 @@ public class SignupService {
         int newNumber = maxNumber + 1;
         String formattedNumber = String.format("%02d", newNumber);  // 두 자리 숫자로 포맷
 
-        // 최종 사번 반환 (예: 2019090101)
+        // 최종 사번 반환 (예: 2025010101)
         return formattedDate + formattedNumber;
+    }
+
+    private boolean isValidDateFormat(String date) {
+        try {
+            LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            return true;
+        } catch (DateTimeParseException e) {
+            return false;
+        }
     }
 }
