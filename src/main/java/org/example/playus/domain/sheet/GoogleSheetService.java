@@ -126,45 +126,47 @@ public class GoogleSheetService {
     @Transactional
     public void syncAll(String spreadSheetId, String employeeRange, String groupQuestRange) {
         try {
-            String groupRange = groupQuestRange + "!B2:D3";
-            String expPerWeekRange = groupQuestRange + "!B5:D";
-
-            List<List<Object>> groupData = googleSheetsHelper.readSheetData(spreadSheetId, groupRange);
-            List<List<Object>> expPerWeekData = googleSheetsHelper.readSheetData(spreadSheetId, expPerWeekRange);
-
-            List<GroupQuest> newGroupQuests = GoogleSheetsConvert.convertToGroupQuest(groupData, expPerWeekData);
-
-            for (GroupQuest newQuest : newGroupQuests) {
-                // 먼저 기존의 모든 중복 데이터 삭제
-                List<GroupQuest> duplicates = groupQuestRepositoryMongo.findAllByAffiliationAndDepartment(
-                        newQuest.getAffiliation(),
-                        newQuest.getDepartment()
-                );
-
-                if (!duplicates.isEmpty()) {
-                    // 가장 최근 데이터 하나만 남기고 나머지 삭제
-                    GroupQuest latestQuest = duplicates.get(0);
-                    duplicates.remove(0);
-                    if (!duplicates.isEmpty()) {
-                        groupQuestRepositoryMongo.deleteAll(duplicates);
-                    }
-
-                    // 최근 데이터의 경험치 정보 업데이트
-                    latestQuest.setGroupExperiences(newQuest.getGroupExperiences());
-                    groupQuestRepositoryMongo.save(latestQuest);
-                    log.info("기존 GroupQuest 데이터 업데이트 완료: {}", latestQuest.getAffiliation());
-                } else {
-                    // 새로운 데이터 저장
-                    groupQuestRepositoryMongo.save(newQuest);
-                    log.info("새로운 GroupQuest 데이터 저장 완료: {}", newQuest.getAffiliation());
-                }
-            }
-
+            syncGroupQuestData(spreadSheetId, groupQuestRange);
             log.info("GroupQuest 데이터 동기화 완료");
-
         } catch (Exception e) {
             log.error("Google Sheets 동기화 중 오류 발생: ", e);
             throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
+        }
+    }
+
+    private void syncGroupQuestData(String spreadSheetId, String groupQuestRange) throws Exception {
+        String groupRange = groupQuestRange + "!B2:D3";
+        String expPerWeekRange = groupQuestRange + "!B5:D";
+
+        List<List<Object>> groupData = googleSheetsHelper.readSheetData(spreadSheetId, groupRange);
+        List<List<Object>> expPerWeekData = googleSheetsHelper.readSheetData(spreadSheetId, expPerWeekRange);
+
+        List<GroupQuest> newGroupQuests = GoogleSheetsConvert.convertToGroupQuest(groupData, expPerWeekData);
+
+        for (GroupQuest newQuest : newGroupQuests) {
+            // 먼저 기존의 모든 중복 데이터 삭제
+            List<GroupQuest> duplicates = groupQuestRepositoryMongo.findAllByAffiliationAndDepartment(
+                    newQuest.getAffiliation(),
+                    newQuest.getDepartment()
+            );
+
+            if (!duplicates.isEmpty()) {
+                // 가장 최근 데이터 하나만 남기고 나머지 삭제
+                GroupQuest latestQuest = duplicates.get(0);
+                duplicates.remove(0);
+                if (!duplicates.isEmpty()) {
+                    groupQuestRepositoryMongo.deleteAll(duplicates);
+                }
+
+                // 최근 데이터의 경험치 정보 업데이트
+                latestQuest.setGroupExperiences(newQuest.getGroupExperiences());
+                groupQuestRepositoryMongo.save(latestQuest);
+                log.info("기존 GroupQuest 데이터 업데이트 완료: {}", latestQuest.getAffiliation());
+            } else {
+                // 새로운 데이터 저장
+                groupQuestRepositoryMongo.save(newQuest);
+                log.info("새로운 GroupQuest 데이터 저장 완료: {}", newQuest.getAffiliation());
+            }
         }
     }
 }

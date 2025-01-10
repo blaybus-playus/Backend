@@ -37,4 +37,10 @@ public class GoogleSheetsHelper {
         ValueRange body = new ValueRange().setValues(Collections.singletonList(row));
         service.spreadsheets().values().update(spreadsheetId, range, body).setValueInputOption("RAW").execute();
     }
+
+    public void appendRow(String spreadsheetId, String range, List<Object> row) throws IOException, GeneralSecurityException {
+        Sheets service = getSheetsService();
+        ValueRange body = new ValueRange().setValues(Collections.singletonList(row));
+        service.spreadsheets().values().append(spreadsheetId, range, body).setValueInputOption("RAW").execute();
+    }
 }
