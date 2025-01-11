@@ -53,6 +53,7 @@ public class GoogleSheetsConvert {
             // User 객체 생성
             Employee employee = new Employee();
             employee.setEmployeeId(row.get(headerIndexMap.get("사번")).toString());
+            employee.setCharacterId("man1");
 
             // PersonalInfo 생성 및 설정
             PersonalInfo personalInfo = new PersonalInfo();
