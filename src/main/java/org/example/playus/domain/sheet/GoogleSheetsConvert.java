@@ -4,6 +4,9 @@ import org.example.playus.domain.employee.Account;
 import org.example.playus.domain.employee.Employee;
 import org.example.playus.domain.employee.PersonalInfo;
 import org.example.playus.domain.board.Board;
+import org.example.playus.domain.evaluation.Evaluation;
+import org.example.playus.domain.evaluation.PersonalEvaluation;
+import org.example.playus.domain.project.Project;
 import org.example.playus.domain.quest.groupGuset.*;
 import org.example.playus.domain.quest.leaderQuest.LeaderQuest;
 import org.example.playus.domain.quest.leaderQuest.LeaderQuestEmployeeList;
@@ -53,6 +56,7 @@ public class GoogleSheetsConvert {
             // User 객체 생성
             Employee employee = new Employee();
             employee.setEmployeeId(row.get(headerIndexMap.get("사번")).toString());
+            employee.setCharacterId("man1");
 
             // PersonalInfo 생성 및 설정
             PersonalInfo personalInfo = new PersonalInfo();
@@ -182,7 +186,7 @@ public class GoogleSheetsConvert {
         return leaderQuests;
     }
 
-    private static List<LeaderQuestExp> convertToLeaderQuestExp(Object affiliation, List<List<Object>> leaderQuestExpData) {
+    public static List<LeaderQuestExp> convertToLeaderQuestExp(Object affiliation, List<List<Object>> leaderQuestExpData) {
         List<LeaderQuestExp> leaderQuestExps = new ArrayList<>();
 
         // 헤더 추출
@@ -194,12 +198,15 @@ public class GoogleSheetsConvert {
             LeaderQuestExp leaderQuestExp = LeaderQuestExp.builder()
                     .affiliation(affiliation.toString())
                     .leaderQuestEmployeeList(LeaderQuestEmployeeList.builder()
-                            .month(Integer.parseInt(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("월")).toString()))
-                            .employeeId(Integer.parseInt(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("사번")).toString()))
-                            .employeeName(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("대상자")).toString())
-                            .questName(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("리더 부여 퀘스트명")).toString())
-                            .achievement(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("달성내용")).toString())
-                            .score(Integer.parseInt(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("부여 경험치")).toString()))
+                            .month(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("월")) != null && !leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("월")).toString().isEmpty()
+                                    ? Integer.parseInt(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("월")).toString()) : 0)
+                            .employeeId(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("사번"))!= null && !leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("사번")).toString().isEmpty()
+                                            ? Integer.parseInt(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("사번")).toString()) : 0)
+                            .employeeName(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("대상자")) == null ? "" : leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("대상자")).toString())
+                            .questName(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("리더 부여 퀘스트명")) == null ? "" : leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("리더 부여 퀘스트명")).toString())
+                            .achievement(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("달성내용"))== null ? "" : leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("달성내용")).toString())
+                            .score(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("부여 경험치"))!= null && !leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("부여 경험치")).toString().isEmpty()
+                                    ? Integer.parseInt(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("부여 경험치")).toString()) : 0)
                             .build())
                     .build();
             leaderQuestExps.add(leaderQuestExp);
@@ -255,6 +262,62 @@ public class GoogleSheetsConvert {
         return boards;
     }
 
+    public static List<Project> convertToProject(List<List<Object>> projectData) {
+        List<Project> projects = new ArrayList<>();
+
+        Map<String, Integer> projectHeaderIndexMap = createHeaderIndexMap(extractHeaders(projectData));
+
+        for (int i = 1; i < projectData.size(); i++) {
+            List<Object> projectRow = projectData.get(i);
+            Project project = Project.builder()
+                    .month(projectRow.get(projectHeaderIndexMap.get("월")) != null && !projectRow.get(projectHeaderIndexMap.get("월")).toString().isEmpty()
+                            ? Integer.parseInt(projectRow.get(projectHeaderIndexMap.get("월")).toString()) : 0)
+                    .day(projectRow.get(projectHeaderIndexMap.get("일")) != null && !projectRow.get(projectHeaderIndexMap.get("일")).toString().isEmpty()
+                            ? Integer.parseInt(projectRow.get(projectHeaderIndexMap.get("일")).toString()) : 0)
+                    .employeeId(projectRow.get(projectHeaderIndexMap.get("사번")) != null && !projectRow.get(projectHeaderIndexMap.get("사번")).toString().isEmpty()
+                            ? Integer.parseInt(projectRow.get(projectHeaderIndexMap.get("사번")).toString()) : 0)
+                    .employeeName(projectRow.get(projectHeaderIndexMap.get("대상자")) == null ? "" : projectRow.get(projectHeaderIndexMap.get("대상자")).toString())
+                    .projectTitle(projectRow.get(projectHeaderIndexMap.get("전사 프로젝트명")) == null ? "" : projectRow.get(projectHeaderIndexMap.get("전사 프로젝트명")).toString())
+                    .score(projectRow.get(projectHeaderIndexMap.get("부여 경험치")) != null && !projectRow.get(projectHeaderIndexMap.get("부여 경험치")).toString().isEmpty()
+                            ? Integer.parseInt(projectRow.get(projectHeaderIndexMap.get("부여 경험치")).toString()) : 0)
+                    .build();
+
+            projects.add(project);
+        }
+
+        return projects;
+    }
+
+    public static List<Evaluation> convertToEvaluation(String term, List<List<Object>> evaluationData) {
+        List<Evaluation> evaluations = new ArrayList<>();
+
+        Map<String, Integer> evaluationHeaderIndexMap = createHeaderIndexMap(extractHeaders(evaluationData));
+
+        List<PersonalEvaluation> personalEvaluations = new ArrayList<>();
+        for (int i = 1; i < evaluationData.size(); i++) {
+            List<Object> evaluationRow = evaluationData.get(i);
+
+            PersonalEvaluation personalEvaluation = PersonalEvaluation.builder()
+                    .employeeId(evaluationRow.get(evaluationHeaderIndexMap.get("사번")) != null && !evaluationRow.get(evaluationHeaderIndexMap.get("사번")).toString().isEmpty()
+                            ? Integer.parseInt(evaluationRow.get(evaluationHeaderIndexMap.get("사번")).toString()) : 0)
+                    .name(evaluationRow.get(evaluationHeaderIndexMap.get("대상자")) == null ? "" : evaluationRow.get(evaluationHeaderIndexMap.get("대상자")).toString())
+                    .grade(evaluationRow.get(evaluationHeaderIndexMap.get("인사평가 등급")) == null ? "" : evaluationRow.get(evaluationHeaderIndexMap.get("인사평가 등급")).toString())
+                    .experience(evaluationRow.get(evaluationHeaderIndexMap.get("부여 경험치")) != null && !evaluationRow.get(evaluationHeaderIndexMap.get("부여 경험치")).toString().isEmpty()
+                            ? Integer.parseInt(evaluationRow.get(evaluationHeaderIndexMap.get("부여 경험치")).toString()) : 0)
+                    .note(evaluationRow.get(evaluationHeaderIndexMap.get("비고")) == null ? "-" : evaluationRow.get(evaluationHeaderIndexMap.get("비고")).toString())
+                    .build();
+
+            personalEvaluations.add(personalEvaluation);
+        }
+        Evaluation evaluation = Evaluation.builder()
+                .term(term)
+                .personalEvaluation(personalEvaluations)
+                .build();
+        evaluations.add(evaluation);
+
+        return evaluations;
+    }
+
     public static List<List<Object>> convertToSheetFormat(List<Board> boards) {
         List<List<Object>> sheetData = new ArrayList<>();
 
@@ -289,5 +352,7 @@ public class GoogleSheetsConvert {
         }
         return headerIndexMap;
     }
+
+
 }
 

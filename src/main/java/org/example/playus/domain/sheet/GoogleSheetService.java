@@ -4,13 +4,22 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import jakarta.transaction.Transactional;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.example.playus.domain.board.Board;
 import org.example.playus.domain.board.BoardRepositoryMongo;
 import org.example.playus.domain.employee.Employee;
 import org.example.playus.domain.employee.EmployeeRepositoryMongo;
+import org.example.playus.domain.evaluation.Evaluation;
+import org.example.playus.domain.evaluation.EvaluationRepository;
+import org.example.playus.domain.evaluation.PersonalEvaluation;
+import org.example.playus.domain.project.Project;
+import org.example.playus.domain.project.ProjectRepository;
 import org.example.playus.domain.quest.groupGuset.GroupQuest;
 import org.example.playus.domain.quest.groupGuset.GroupQuestRepositoryMongo;
 import org.example.playus.domain.quest.leaderQuest.LeaderQuest;
+import org.example.playus.domain.quest.leaderQuest.LeaderQuestExp;
+import org.example.playus.domain.quest.leaderQuest.LeaderQuestExpRepository;
 import org.example.playus.domain.quest.leaderQuest.LeaderQuestRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class GoogleSheetService {
     private static final String APPLICATION_NAME = "Google Sheets API Example";
     private static final String CREDENTIALS_FILE_PATH = "src/main/resources/googleSheet/google.json"; // 서비스 계정 키 경로
@@ -31,14 +41,13 @@ public class GoogleSheetService {
     private static final GoogleSheetsHelper googleSheetsHelper = new GoogleSheetsHelper();
     private static final Logger log = LoggerFactory.getLogger(GoogleSheetService.class);
 
-    @Autowired
-    private EmployeeRepositoryMongo employeeRepositoryMongo;
-    @Autowired
-    private GroupQuestRepositoryMongo groupQuestRepositoryMongo;
-    @Autowired
-    private LeaderQuestRepository leaderQuestRepository;
-    @Autowired
-    private BoardRepositoryMongo boardRepositoryMongo;
+    private final EmployeeRepositoryMongo employeeRepositoryMongo;
+    private final GroupQuestRepositoryMongo groupQuestRepositoryMongo;
+    private final LeaderQuestRepository leaderQuestRepository;
+    private final BoardRepositoryMongo boardRepositoryMongo;
+    private final LeaderQuestExpRepository leaderQuestExpRepository;
+    private final ProjectRepository projectRepository;
+    private final EvaluationRepository evaluationRepository;
 
     // TODO : Google Sheets API를 Service layer에서 분리해야 함
     public List<Object> getSheetData(String spreadsheetId, String range) throws IOException, GeneralSecurityException {
@@ -229,5 +238,84 @@ public class GoogleSheetService {
             log.error("게시글 동기화 중 오류 발생: ", e);
             throw new RuntimeException("게시글 동기화 중 오류 발생: " + e.getMessage());
         }
+    }
+
+    @Transactional
+    public void syncLeaderQuestExp(String spreadSheetId, String leaderQuestRANGE) {
+        try {
+            String affiliationRange = leaderQuestRANGE + "!J8";
+            String affiliation = googleSheetsHelper.readCell(spreadSheetId, affiliationRange);
+
+            String leaderQuestRange = leaderQuestRANGE + "!B9:G";
+            List<List<Object>> leaderQuestExpData = googleSheetsHelper.readSheetData(spreadSheetId, leaderQuestRange);
+            List<LeaderQuestExp> leaderQuestExpList = GoogleSheetsConvert.convertToLeaderQuestExp(affiliation, leaderQuestExpData);
+
+            // 기존 데이터 삭제
+            List<LeaderQuestExp> existingLeaderQuestExps = leaderQuestExpRepository.findAllByAffiliation(affiliation);
+            if (!existingLeaderQuestExps.isEmpty()) {
+                leaderQuestExpRepository.deleteAll(existingLeaderQuestExps);
+                log.info("기존 LeaderQuestExp 데이터 삭제 완료: {}", affiliation);
+            }
+
+            // 새로운 데이터 저장
+            leaderQuestExpRepository.saveAll(leaderQuestExpList);
+            log.info("새로운 LeaderQuestExp 데이터 저장 완료: {}", affiliation);
+        } catch (Exception e) {
+            log.error("Google Sheets 동기화 중 오류 발생: ", e);
+            throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void syncProject(String spreadSheetId, String projectRANGE) {
+        try {
+            List<List<Object>> projectData = googleSheetsHelper.readSheetData(spreadSheetId, projectRANGE);
+            List<Project> projectList = GoogleSheetsConvert.convertToProject(projectData);
+
+            // 기존 데이터 삭제
+            projectRepository.deleteAll();
+            log.info("기존 Project 데이터 삭제 완료.");
+
+            // 새로운 데이터 저장
+            projectRepository.saveAll(projectList);
+            log.info("새로운 Project 데이터 저장 완료.");
+        } catch (Exception e) {
+            log.error("Google Sheets 동기화 중 오류 발생: ", e);
+            throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void syncEvaluation(String spreadSheetId, String evaluationRANGE) {
+        try {
+            // 상반기, 하반기 평가 데이터 읽기
+            String firstHalfRange = evaluationRANGE + "!B7";
+            String secondHalfRange = evaluationRANGE + "!H7";
+
+            String firstHalf = googleSheetsHelper.readCell(spreadSheetId, firstHalfRange);
+            String secondHalf = googleSheetsHelper.readCell(spreadSheetId, secondHalfRange);
+
+            // 평가 데이터 읽기
+            String firstHalfEvaluationDataRange = evaluationRANGE + "!B9:F";
+            String secondHalfEvaluationDataRange = evaluationRANGE + "!H9:L";
+
+            List<List<Object>> firstHalfEvaluationData = googleSheetsHelper.readSheetData(spreadSheetId, firstHalfEvaluationDataRange);
+            List<List<Object>> secondHalfEvaluationData = googleSheetsHelper.readSheetData(spreadSheetId, secondHalfEvaluationDataRange);
+
+            List<Evaluation> firstHalfEvaluationList = GoogleSheetsConvert.convertToEvaluation(firstHalf, firstHalfEvaluationData);
+            List<Evaluation> secondHalfEvaluationList = GoogleSheetsConvert.convertToEvaluation(secondHalf, secondHalfEvaluationData);
+
+            // 기존 데이터 삭제
+            evaluationRepository.deleteAll();
+
+            // 새로운 데이터 저장
+            evaluationRepository.saveAll(firstHalfEvaluationList);
+            evaluationRepository.saveAll(secondHalfEvaluationList);
+
+        } catch (Exception e) {
+            log.error("Google Sheets 동기화 중 오류 발생: ", e);
+            throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
+        }
+
     }
 }
