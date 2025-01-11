@@ -1,0 +1,24 @@
+package org.example.playus.domain.quest.leaderQuest;
+
+import jakarta.persistence.Id;
+import lombok.Builder;
+import lombok.Getter;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+@Getter
+@Document(collection = "leaderQuest")
+public class LeaderQuest {
+    @Id
+    private String id; // 리더 퀘스트 ID
+    private String affiliation; // 소속
+
+    private LeaderQuestList leaderQuestList; // 리더 퀘스트 리스트
+
+    @Builder
+    public LeaderQuest(String id, String affiliation, LeaderQuestList leaderQuestList) {
+        this.id = id;
+        this.affiliation = affiliation;
+        this.leaderQuestList = leaderQuestList;
+    }
+
+}

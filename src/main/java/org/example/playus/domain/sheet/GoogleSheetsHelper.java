@@ -26,6 +26,12 @@ public class GoogleSheetsHelper {
                 .build();
     }
 
+    public String readCell(String spreadsheetId, String range) throws IOException, GeneralSecurityException {
+        Sheets service = getSheetsService();
+        ValueRange response = service.spreadsheets().values().get(spreadsheetId, range).execute();
+        return response.getValues().get(0).get(0).toString();
+    }
+
     public List<List<Object>> readSheetData(String spreadsheetId, String range) throws IOException, GeneralSecurityException {
         Sheets service = getSheetsService();
         ValueRange response = service.spreadsheets().values().get(spreadsheetId, range).execute();

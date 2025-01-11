@@ -3,6 +3,8 @@ package org.example.playus.domain.login;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.example.playus.domain.login.dto.LoginRequestDto;
+import org.example.playus.domain.login.dto.LoginResponseDto;
 import org.example.playus.global.common.CommonResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

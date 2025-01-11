@@ -1,4 +1,4 @@
-package org.example.playus.domain.login;
+package org.example.playus.domain.login.dto;
 
 import lombok.Builder;
 import lombok.Getter;

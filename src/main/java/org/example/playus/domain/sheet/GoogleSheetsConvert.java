@@ -5,6 +5,10 @@ import org.example.playus.domain.employee.Employee;
 import org.example.playus.domain.employee.PersonalInfo;
 import org.example.playus.domain.board.Board;
 import org.example.playus.domain.quest.groupGuset.*;
+import org.example.playus.domain.quest.leaderQuest.LeaderQuest;
+import org.example.playus.domain.quest.leaderQuest.LeaderQuestEmployeeList;
+import org.example.playus.domain.quest.leaderQuest.LeaderQuestExp;
+import org.example.playus.domain.quest.leaderQuest.LeaderQuestList;
 
 import java.util.*;
 
@@ -36,13 +40,6 @@ public class GoogleSheetsConvert {
         for (int i = 1; i < sheetData.size(); i++) { // 첫 번째 줄은 헤더로 간주
             List<Object> row = sheetData.get(i);
 
-
-            // 데이터가 누락되지 않았는지 확인
-//            if (row.size() < headers.size()) {
-//                log.warn("Skipping row {}: Missing data (Expected size: {}, Actual size: {})", i, headers.size(), row.size());
-//                continue;
-//            }
-//
             if (row.isEmpty() || row.stream().allMatch(cell -> cell.toString().isBlank())) {
                 log.warn("Row {} is empty and will be skipped.", i);
                 continue;
@@ -144,6 +141,73 @@ public class GoogleSheetsConvert {
         return groupQuests;
     }
 
+    public static List<LeaderQuest> convertToLeaderQuest(String affiliation, List<List<Object>> leaderQuestListData) {
+        List<LeaderQuest> leaderQuests = new ArrayList<>();
+
+        // 헤더 추출
+        Map<String, Integer> leaderQuestHeaderIndexMap = createHeaderIndexMap(extractHeaders(leaderQuestListData));
+
+        // 리더 퀘스트 목록 생성
+        for (int i = 1; i < leaderQuestListData.size(); i++) {
+            List<Object> leaderQuestRow = leaderQuestListData.get(i);
+
+            // 비어있는 값을 빈 문자열로 설정
+            while (leaderQuestRow.size() < leaderQuestHeaderIndexMap.size()) {
+                leaderQuestRow.add("");
+            }
+
+            LeaderQuest leaderQuest = LeaderQuest.builder()
+                    .affiliation(affiliation)
+                    .leaderQuestList(LeaderQuestList.builder()
+                            .id(affiliation + "-" + i)
+                            .questName(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("퀘스트명")) == null
+                                    ? "" : leaderQuestRow.get(leaderQuestHeaderIndexMap.get("퀘스트명")).toString())
+                            .period(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("획득주기")) == null
+                                    ? "" : leaderQuestRow.get(leaderQuestHeaderIndexMap.get("획득주기")).toString())
+                            .totalScore(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("경험치")) == null
+                                    ? "" : leaderQuestRow.get(leaderQuestHeaderIndexMap.get("경험치")).toString())
+                            .maxScore(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Max")) != null && !leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Max")).toString().isEmpty()
+                                    ? Integer.parseInt(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Max")).toString()) : 0)
+                            .mediumScore(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Median")) != null && !leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Median")).toString().isEmpty()
+                                    ? Integer.parseInt(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Median")).toString()) : 0)
+                            .requireForMax(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Max조건")) == null
+                                    ? "" : leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Max조건")).toString())
+                            .requireForMedium(leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Median조건")) == null
+                                    ? "" : leaderQuestRow.get(leaderQuestHeaderIndexMap.get("Median조건")).toString())
+                            .build())
+                    .build();
+            leaderQuests.add(leaderQuest);
+        }
+
+        return leaderQuests;
+    }
+
+    private static List<LeaderQuestExp> convertToLeaderQuestExp(Object affiliation, List<List<Object>> leaderQuestExpData) {
+        List<LeaderQuestExp> leaderQuestExps = new ArrayList<>();
+
+        // 헤더 추출
+        Map<String, Integer> leaderQuestExpHeaderIndexMap = createHeaderIndexMap(extractHeaders(leaderQuestExpData));
+
+        // 리더 퀘스트 경험치 생성
+        for (int i = 1; i < leaderQuestExpData.size(); i++) {
+            List<Object> leaderQuestExpRow = leaderQuestExpData.get(i);
+            LeaderQuestExp leaderQuestExp = LeaderQuestExp.builder()
+                    .affiliation(affiliation.toString())
+                    .leaderQuestEmployeeList(LeaderQuestEmployeeList.builder()
+                            .month(Integer.parseInt(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("월")).toString()))
+                            .employeeId(Integer.parseInt(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("사번")).toString()))
+                            .employeeName(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("대상자")).toString())
+                            .questName(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("리더 부여 퀘스트명")).toString())
+                            .achievement(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("달성내용")).toString())
+                            .score(Integer.parseInt(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("부여 경험치")).toString()))
+                            .build())
+                    .build();
+            leaderQuestExps.add(leaderQuestExp);
+        }
+
+        return leaderQuestExps;
+    }
+
     public static List<Board> convertToBoards(List<List<Object>> sheetData) {
         List<Board> boards = new ArrayList<>();
         log.info("게시글 데이터: {}", sheetData);
@@ -207,7 +271,6 @@ public class GoogleSheetsConvert {
         }
         return sheetData;
     }
-
 
     // SheetData Empty 확인 및 헤더 추출
     private static List<Object> extractHeaders(List<List<Object>> sheetData) {
