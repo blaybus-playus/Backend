@@ -10,7 +10,6 @@ import org.example.playus.domain.employee.Employee;
 import org.example.playus.domain.employee.EmployeeRepositoryMongo;
 import org.example.playus.domain.quest.groupGuset.GroupQuest;
 import org.example.playus.domain.quest.groupGuset.GroupQuestRepositoryMongo;
-import org.example.playus.domain.quest.groupGuset.WeeklyInfoRepositoryMongo;
 import org.example.playus.domain.quest.leaderQuest.LeaderQuest;
 import org.example.playus.domain.quest.leaderQuest.LeaderQuestRepository;
 import org.slf4j.Logger;
@@ -104,7 +103,7 @@ public class GoogleSheetService {
     }
 
     @Transactional
-    public void syncAll(String spreadSheetId, String employeeRange, String groupQuestRange,String boardRange, String leaderQuestRange) {
+    public void syncAll(String spreadSheetId, String employeeRange, String groupQuestRange,String leaderQuestRange) {
         try {
             syncGroupQuestData(spreadSheetId, groupQuestRange);
             syncLeaderQuestData(spreadSheetId, leaderQuestRange);
