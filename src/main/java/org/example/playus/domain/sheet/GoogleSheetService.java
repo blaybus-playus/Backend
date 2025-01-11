@@ -11,6 +11,8 @@ import org.example.playus.domain.employee.EmployeeRepositoryMongo;
 import org.example.playus.domain.quest.groupGuset.GroupQuest;
 import org.example.playus.domain.quest.groupGuset.GroupQuestRepositoryMongo;
 import org.example.playus.domain.quest.leaderQuest.LeaderQuest;
+import org.example.playus.domain.quest.leaderQuest.LeaderQuestExp;
+import org.example.playus.domain.quest.leaderQuest.LeaderQuestExpRepository;
 import org.example.playus.domain.quest.leaderQuest.LeaderQuestRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +41,8 @@ public class GoogleSheetService {
     private LeaderQuestRepository leaderQuestRepository;
     @Autowired
     private BoardRepositoryMongo boardRepositoryMongo;
+    @Autowired
+    private LeaderQuestExpRepository leaderQuestExpRepository;
 
     // TODO : Google Sheets API를 Service layer에서 분리해야 함
     public List<Object> getSheetData(String spreadsheetId, String range) throws IOException, GeneralSecurityException {
@@ -228,6 +232,32 @@ public class GoogleSheetService {
         } catch (Exception e) {
             log.error("게시글 동기화 중 오류 발생: ", e);
             throw new RuntimeException("게시글 동기화 중 오류 발생: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void syncLeaderQuestExp(String spreadSheetId, String leaderQuestRANGE) {
+        try {
+            String affiliationRange = leaderQuestRANGE + "!J8";
+            String affiliation = googleSheetsHelper.readCell(spreadSheetId, affiliationRange);
+
+            String leaderQuestRange = leaderQuestRANGE + "!B9:G";
+            List<List<Object>> leaderQuestExpData = googleSheetsHelper.readSheetData(spreadSheetId, leaderQuestRange);
+            List<LeaderQuestExp> leaderQuestExpList = GoogleSheetsConvert.convertToLeaderQuestExp(affiliation, leaderQuestExpData);
+
+            // 기존 데이터 삭제
+            List<LeaderQuestExp> existingLeaderQuestExps = leaderQuestExpRepository.findAllByAffiliation(affiliation);
+            if (!existingLeaderQuestExps.isEmpty()) {
+                leaderQuestExpRepository.deleteAll(existingLeaderQuestExps);
+                log.info("기존 LeaderQuestExp 데이터 삭제 완료: {}", affiliation);
+            }
+
+            // 새로운 데이터 저장
+            leaderQuestExpRepository.saveAll(leaderQuestExpList);
+            log.info("새로운 LeaderQuestExp 데이터 저장 완료: {}", affiliation);
+        } catch (Exception e) {
+            log.error("Google Sheets 동기화 중 오류 발생: ", e);
+            throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
         }
     }
 }

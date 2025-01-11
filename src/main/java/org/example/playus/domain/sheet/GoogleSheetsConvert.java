@@ -182,7 +182,7 @@ public class GoogleSheetsConvert {
         return leaderQuests;
     }
 
-    private static List<LeaderQuestExp> convertToLeaderQuestExp(Object affiliation, List<List<Object>> leaderQuestExpData) {
+    public static List<LeaderQuestExp> convertToLeaderQuestExp(Object affiliation, List<List<Object>> leaderQuestExpData) {
         List<LeaderQuestExp> leaderQuestExps = new ArrayList<>();
 
         // 헤더 추출
@@ -194,12 +194,15 @@ public class GoogleSheetsConvert {
             LeaderQuestExp leaderQuestExp = LeaderQuestExp.builder()
                     .affiliation(affiliation.toString())
                     .leaderQuestEmployeeList(LeaderQuestEmployeeList.builder()
-                            .month(Integer.parseInt(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("월")).toString()))
-                            .employeeId(Integer.parseInt(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("사번")).toString()))
-                            .employeeName(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("대상자")).toString())
-                            .questName(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("리더 부여 퀘스트명")).toString())
-                            .achievement(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("달성내용")).toString())
-                            .score(Integer.parseInt(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("부여 경험치")).toString()))
+                            .month(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("월")) != null && !leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("월")).toString().isEmpty()
+                                    ? Integer.parseInt(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("월")).toString()) : 0)
+                            .employeeId(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("사번"))!= null && !leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("사번")).toString().isEmpty()
+                                            ? Integer.parseInt(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("사번")).toString()) : 0)
+                            .employeeName(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("대상자")) == null ? "" : leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("대상자")).toString())
+                            .questName(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("리더 부여 퀘스트명")) == null ? "" : leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("리더 부여 퀘스트명")).toString())
+                            .achievement(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("달성내용"))== null ? "" : leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("달성내용")).toString())
+                            .score(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("부여 경험치"))!= null && !leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("부여 경험치")).toString().isEmpty()
+                                    ? Integer.parseInt(leaderQuestExpRow.get(leaderQuestExpHeaderIndexMap.get("부여 경험치")).toString()) : 0)
                             .build())
                     .build();
             leaderQuestExps.add(leaderQuestExp);

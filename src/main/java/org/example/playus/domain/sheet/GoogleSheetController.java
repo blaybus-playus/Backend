@@ -91,4 +91,17 @@ public class GoogleSheetController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("게시판 동기화 실패: " + e.getMessage());
         }
     }
+
+    // 리더퀘스트 경험치 부분 데이터 동기화
+    @PostMapping("/sync/leader/quest/exp")
+    @Operation(summary = "리더 퀘스트 경험치 부분 동기화", description = "리더 퀘스트 경험치 부분 데이터를 동기화")
+    public ResponseEntity<String> syncLeaderQuestExp() {
+        try {
+            googleSheetService.syncLeaderQuestExp(spreadSheetId, LeaderQuestRANGE);
+            return ResponseEntity.ok("리더 퀘스트 경험치 부분 동기화 완료");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("리더 퀘스트 경험치 부분 동기화 실패: " + e.getMessage());
+        }
+    }
 }
