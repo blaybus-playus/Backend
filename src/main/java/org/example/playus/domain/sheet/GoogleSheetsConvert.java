@@ -3,6 +3,7 @@ package org.example.playus.domain.sheet;
 import org.example.playus.domain.employee.Account;
 import org.example.playus.domain.employee.Employee;
 import org.example.playus.domain.employee.PersonalInfo;
+import org.example.playus.domain.board.Board;
 import org.example.playus.domain.quest.groupGuset.*;
 
 import java.util.*;
@@ -142,6 +143,71 @@ public class GoogleSheetsConvert {
         groupQuests.add(groupQuest);
         return groupQuests;
     }
+
+    public static List<Board> convertToBoards(List<List<Object>> sheetData) {
+        List<Board> boards = new ArrayList<>();
+        log.info("게시글 데이터: {}", sheetData);
+
+        if (sheetData.isEmpty() || sheetData.size() < 2) {
+            log.warn("게시글 데이터가 비어 있습니다.");
+            return boards;
+        }
+
+        List<Object> headers = extractHeaders(sheetData);
+        log.info("실제 시트 헤더: {}", headers);
+        Map<String, Integer> headerIndexMap = createHeaderIndexMap(headers);
+
+        if (!headerIndexMap.containsKey("번호") || !headerIndexMap.containsKey("제목") || !headerIndexMap.containsKey("글")) {
+            log.error("헤더에 '번호', '제목', 또는 '글'이 없습니다.");
+            return boards;
+        }
+
+        int numberIndex = headerIndexMap.get("번호");
+        int titleIndex = headerIndexMap.get("제목");
+        int contentIndex = headerIndexMap.get("글");
+
+        for (int i = 1; i < sheetData.size(); i++) {
+            List<Object> row = sheetData.get(i);
+
+            while (row.size() <= contentIndex) {
+                row.add("");  // 누락된 데이터는 빈 문자열로 채웁니다.
+            }
+
+            String id = row.size() > numberIndex ? row.get(numberIndex).toString().trim() : null;
+            String title = row.size() > titleIndex ? row.get(titleIndex).toString().trim() : "";
+            String content = row.size() > contentIndex ? row.get(contentIndex).toString().trim() : "";
+
+            if (title.isBlank() || content.isBlank()) {
+                log.warn("제목 또는 내용이 비어 있습니다. (행 번호: {}), 데이터: {}", i + 1, row);
+            }
+
+            Board board = new Board();
+            board.setId(id);
+            board.setTitle(title);
+            board.setContent(content);
+            boards.add(board);
+        }
+
+        return boards;
+    }
+
+    public static List<List<Object>> convertToSheetFormat(List<Board> boards) {
+        List<List<Object>> sheetData = new ArrayList<>();
+
+        // 헤더 행 추가
+        sheetData.add(List.of("제목", "글"));
+
+        // 게시글 데이터 행 추가
+        for (Board board : boards) {
+            List<Object> row = List.of(
+                    board.getTitle(),
+                    board.getContent()
+            );
+            sheetData.add(row);
+        }
+        return sheetData;
+    }
+
 
     // SheetData Empty 확인 및 헤더 추출
     private static List<Object> extractHeaders(List<List<Object>> sheetData) {
