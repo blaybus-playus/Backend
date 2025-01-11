@@ -27,6 +27,7 @@ public class GoogleSheetController {
     private static final String LeaderQuestRANGE = "리더부여 퀘스트"; // 리더 퀘스트 범위
     private static final String BoardRANGE = "게시판!B6:D"; // 게시판 범위
     private static final String ProjectRANGE = "참고. 전사 프로젝트!B7:H"; // 프로젝트 범위
+    private static final String EvaluationRange = "참고. 인사평가"; // 인사평가 범위
 
     // 데이터 조회
     @GetMapping("/read")
@@ -116,6 +117,19 @@ public class GoogleSheetController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("전사 프로젝트 동기화 실패: " + e.getMessage());
+        }
+    }
+
+    // 인사 평가 동기화
+    @PostMapping("/sync/evaluation")
+    @Operation(summary = "인사 평가 동기화", description = "인사 평가 데이터를 동기화")
+    public ResponseEntity<String> syncEvaluation() {
+        try {
+            googleSheetService.syncEvaluation(spreadSheetId, EvaluationRange);
+            return ResponseEntity.ok("인사 평가 동기화 완료");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("인사 평가 동기화 실패: " + e.getMessage());
         }
     }
 }

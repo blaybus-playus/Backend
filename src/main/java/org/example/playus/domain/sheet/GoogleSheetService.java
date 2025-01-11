@@ -10,6 +10,9 @@ import org.example.playus.domain.board.Board;
 import org.example.playus.domain.board.BoardRepositoryMongo;
 import org.example.playus.domain.employee.Employee;
 import org.example.playus.domain.employee.EmployeeRepositoryMongo;
+import org.example.playus.domain.evaluation.Evaluation;
+import org.example.playus.domain.evaluation.EvaluationRepository;
+import org.example.playus.domain.evaluation.PersonalEvaluation;
 import org.example.playus.domain.project.Project;
 import org.example.playus.domain.project.ProjectRepository;
 import org.example.playus.domain.quest.groupGuset.GroupQuest;
@@ -44,6 +47,7 @@ public class GoogleSheetService {
     private final BoardRepositoryMongo boardRepositoryMongo;
     private final LeaderQuestExpRepository leaderQuestExpRepository;
     private final ProjectRepository projectRepository;
+    private final EvaluationRepository evaluationRepository;
 
     // TODO : Google Sheets API를 Service layer에서 분리해야 함
     public List<Object> getSheetData(String spreadsheetId, String range) throws IOException, GeneralSecurityException {
@@ -279,5 +283,39 @@ public class GoogleSheetService {
             log.error("Google Sheets 동기화 중 오류 발생: ", e);
             throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
         }
+    }
+
+    @Transactional
+    public void syncEvaluation(String spreadSheetId, String evaluationRANGE) {
+        try {
+            // 상반기, 하반기 평가 데이터 읽기
+            String firstHalfRange = evaluationRANGE + "!B7";
+            String secondHalfRange = evaluationRANGE + "!H7";
+
+            String firstHalf = googleSheetsHelper.readCell(spreadSheetId, firstHalfRange);
+            String secondHalf = googleSheetsHelper.readCell(spreadSheetId, secondHalfRange);
+
+            // 평가 데이터 읽기
+            String firstHalfEvaluationDataRange = evaluationRANGE + "!B9:F";
+            String secondHalfEvaluationDataRange = evaluationRANGE + "!H9:L";
+
+            List<List<Object>> firstHalfEvaluationData = googleSheetsHelper.readSheetData(spreadSheetId, firstHalfEvaluationDataRange);
+            List<List<Object>> secondHalfEvaluationData = googleSheetsHelper.readSheetData(spreadSheetId, secondHalfEvaluationDataRange);
+
+            List<Evaluation> firstHalfEvaluationList = GoogleSheetsConvert.convertToEvaluation(firstHalf, firstHalfEvaluationData);
+            List<Evaluation> secondHalfEvaluationList = GoogleSheetsConvert.convertToEvaluation(secondHalf, secondHalfEvaluationData);
+
+            // 기존 데이터 삭제
+            evaluationRepository.deleteAll();
+
+            // 새로운 데이터 저장
+            evaluationRepository.saveAll(firstHalfEvaluationList);
+            evaluationRepository.saveAll(secondHalfEvaluationList);
+
+        } catch (Exception e) {
+            log.error("Google Sheets 동기화 중 오류 발생: ", e);
+            throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
+        }
+
     }
 }
