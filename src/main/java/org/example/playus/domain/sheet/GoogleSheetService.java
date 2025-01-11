@@ -4,9 +4,10 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import jakarta.transaction.Transactional;
+import org.example.playus.domain.board.Board;
+import org.example.playus.domain.board.BoardRepositoryMongo;
 import org.example.playus.domain.employee.Employee;
 import org.example.playus.domain.employee.EmployeeRepositoryMongo;
-import org.example.playus.domain.quest.groupGuset.GroupExperience;
 import org.example.playus.domain.quest.groupGuset.GroupQuest;
 import org.example.playus.domain.quest.groupGuset.GroupQuestRepositoryMongo;
 import org.example.playus.domain.quest.groupGuset.WeeklyInfoRepositoryMongo;
@@ -20,9 +21,8 @@ import org.springframework.stereotype.Service;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 
 @Service
 public class GoogleSheetService {
@@ -38,7 +38,8 @@ public class GoogleSheetService {
     private GroupQuestRepositoryMongo groupQuestRepositoryMongo;
     @Autowired
     private LeaderQuestRepository leaderQuestRepository;
-
+    @Autowired
+    private BoardRepositoryMongo boardRepositoryMongo;
 
     // TODO : Google Sheets API를 Service layer에서 분리해야 함
     public List<Object> getSheetData(String spreadsheetId, String range) throws IOException, GeneralSecurityException {
@@ -103,7 +104,7 @@ public class GoogleSheetService {
     }
 
     @Transactional
-    public void syncAll(String spreadSheetId, String employeeRange, String groupQuestRange, String leaderQuestRange) {
+    public void syncAll(String spreadSheetId, String employeeRange, String groupQuestRange,String boardRange, String leaderQuestRange) {
         try {
             syncGroupQuestData(spreadSheetId, groupQuestRange);
             syncLeaderQuestData(spreadSheetId, leaderQuestRange);
@@ -186,5 +187,48 @@ public class GoogleSheetService {
 
         List<GroupQuest> groupQuestList = GoogleSheetsConvert.convertToGroupQuest(groupData, expPerWeekData, scoreData);
         return groupQuestList;
+    }
+
+    // 1.구글 데이터를 읽어 mongoDB에 저장 2.mongoDB 데이터를 다시 읽어와 구글 데이터에 업데이트
+    @Transactional
+    public void syncBoard(String spreadsheetId, String boardRange) throws Exception {
+        try {
+            // Step 1: Google Sheets에서 게시글 데이터를 읽어와 DB에 저장
+            List<List<Object>> boardSheetData = googleSheetsHelper.readSheetData(spreadsheetId, boardRange);
+            log.info("게시글 데이터 읽기 완료: {}", boardSheetData);
+
+            // 게시글 객체로 변환 및 저장
+            List<Board> boardsFromSheet = GoogleSheetsConvert.convertToBoards(boardSheetData);
+
+            // 기존 데이터 삭제
+            boardRepositoryMongo.deleteAll();
+            log.info("MongoDB의 기존 게시글 데이터 삭제 완료.");
+
+            // 새 데이터 저장
+            boardRepositoryMongo.saveAll(boardsFromSheet);
+            log.info("MongoDB에 새 게시글 데이터 저장 완료.");
+
+            // Step 2: MongoDB에서 게시글을 가져와 Google Sheets 업데이트
+            List<List<Object>> updatedPostData = new ArrayList<>();
+            updatedPostData.add(List.of("번호", "제목", "글"));  // 헤더 추가
+
+            for (Board board : boardsFromSheet) {
+                if (board.getTitle() != null && !board.getTitle().isEmpty()) {
+                    updatedPostData.add(List.of(
+                            board.getId(),  // MongoDB의 _id를 사용
+                            board.getTitle(),
+                            board.getContent() != null ? board.getContent() : ""
+                    ));
+                }
+            }
+
+            // 시트 업데이트
+            googleSheetsHelper.updateSheetData(spreadsheetId, boardRange, updatedPostData);
+            log.info("MongoDB의 게시글 데이터를 Google Sheets에 업데이트 완료");
+
+        } catch (Exception e) {
+            log.error("게시글 동기화 중 오류 발생: ", e);
+            throw new RuntimeException("게시글 동기화 중 오류 발생: " + e.getMessage());
+        }
     }
 }

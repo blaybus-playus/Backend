@@ -25,6 +25,8 @@ public class GoogleSheetController {
     private static final String EmployeeRANGE = "시트10!B2:V"; // 읽을 셀 범위
     private static final String GroupQuestRANGE = "직무퀘 음성 1센터 1그룹"; // 읽을 셀 범위
     private static final String LeaderQuestRANGE = "리더부여 퀘스트"; // 읽을 셀 범위
+    private static final String BoardRANGE ="게시판!B6:D";
+
 
     @GetMapping("/read")
     @Operation(summary = "sheet read", description = "데이터 조회하는 기능")
@@ -67,9 +69,24 @@ public class GoogleSheetController {
         try {
             googleSheetService.syncLeaderQuestData(spreadSheetId, LeaderQuestRANGE);
             return ResponseEntity.ok("리더 퀘스트 동기화 완료");
+    @PutMapping("/sync")
+    public ResponseEntity<String> syncSheetAndMongo() {
+        try {
+            googleSheetService.syncAll(spreadSheetId, EmployeeRANGE, GroupQuestRANGE, BoardRANGE);
+            return ResponseEntity.ok("데이터 동기화 완료");
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("리더 퀘스트 동기화 실패: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/sync/board")
+    public ResponseEntity<String> syncBoard() {
+        try{
+            googleSheetService.syncBoard(spreadSheetId, BoardRANGE);
+            return ResponseEntity.ok("게시판 동기화 완료");
+        }catch (Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("게시판 동기화 실패" + e.getMessage());
         }
     }
 }

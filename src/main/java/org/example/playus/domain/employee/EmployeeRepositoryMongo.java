@@ -9,8 +9,6 @@ import java.util.Optional;
 @Repository
 public interface EmployeeRepositoryMongo extends MongoRepository<Employee, String> {
 
-    Optional<Employee> findByPersonalInfoName(String username);
-
     Optional<Employee> findByAccountUsername(String username);
 
     List<Employee> findByPersonalInfoJoinDate(String joinDate);
