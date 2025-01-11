@@ -4,6 +4,7 @@ import org.example.playus.domain.employee.Account;
 import org.example.playus.domain.employee.Employee;
 import org.example.playus.domain.employee.PersonalInfo;
 import org.example.playus.domain.board.Board;
+import org.example.playus.domain.project.Project;
 import org.example.playus.domain.quest.groupGuset.*;
 import org.example.playus.domain.quest.leaderQuest.LeaderQuest;
 import org.example.playus.domain.quest.leaderQuest.LeaderQuestEmployeeList;
@@ -259,6 +260,32 @@ public class GoogleSheetsConvert {
         return boards;
     }
 
+    public static List<Project> convertToProject(List<List<Object>> projectData) {
+        List<Project> projects = new ArrayList<>();
+
+        Map<String, Integer> projectHeaderIndexMap = createHeaderIndexMap(extractHeaders(projectData));
+
+        for (int i = 1; i < projectData.size(); i++) {
+            List<Object> projectRow = projectData.get(i);
+            Project project = Project.builder()
+                    .month(projectRow.get(projectHeaderIndexMap.get("월")) != null && !projectRow.get(projectHeaderIndexMap.get("월")).toString().isEmpty()
+                            ? Integer.parseInt(projectRow.get(projectHeaderIndexMap.get("월")).toString()) : 0)
+                    .day(projectRow.get(projectHeaderIndexMap.get("일")) != null && !projectRow.get(projectHeaderIndexMap.get("일")).toString().isEmpty()
+                            ? Integer.parseInt(projectRow.get(projectHeaderIndexMap.get("일")).toString()) : 0)
+                    .employeeId(projectRow.get(projectHeaderIndexMap.get("사번")) != null && !projectRow.get(projectHeaderIndexMap.get("사번")).toString().isEmpty()
+                            ? Integer.parseInt(projectRow.get(projectHeaderIndexMap.get("사번")).toString()) : 0)
+                    .employeeName(projectRow.get(projectHeaderIndexMap.get("대상자")) == null ? "" : projectRow.get(projectHeaderIndexMap.get("대상자")).toString())
+                    .projectTitle(projectRow.get(projectHeaderIndexMap.get("전사 프로젝트명")) == null ? "" : projectRow.get(projectHeaderIndexMap.get("전사 프로젝트명")).toString())
+                    .score(projectRow.get(projectHeaderIndexMap.get("부여 경험치")) != null && !projectRow.get(projectHeaderIndexMap.get("부여 경험치")).toString().isEmpty()
+                            ? Integer.parseInt(projectRow.get(projectHeaderIndexMap.get("부여 경험치")).toString()) : 0)
+                    .build();
+
+            projects.add(project);
+        }
+
+        return projects;
+    }
+
     public static List<List<Object>> convertToSheetFormat(List<Board> boards) {
         List<List<Object>> sheetData = new ArrayList<>();
 
@@ -293,5 +320,7 @@ public class GoogleSheetsConvert {
         }
         return headerIndexMap;
     }
+
+
 }
 

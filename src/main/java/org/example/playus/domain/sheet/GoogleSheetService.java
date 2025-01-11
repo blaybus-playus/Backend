@@ -4,10 +4,14 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import jakarta.transaction.Transactional;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.example.playus.domain.board.Board;
 import org.example.playus.domain.board.BoardRepositoryMongo;
 import org.example.playus.domain.employee.Employee;
 import org.example.playus.domain.employee.EmployeeRepositoryMongo;
+import org.example.playus.domain.project.Project;
+import org.example.playus.domain.project.ProjectRepository;
 import org.example.playus.domain.quest.groupGuset.GroupQuest;
 import org.example.playus.domain.quest.groupGuset.GroupQuestRepositoryMongo;
 import org.example.playus.domain.quest.leaderQuest.LeaderQuest;
@@ -26,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class GoogleSheetService {
     private static final String APPLICATION_NAME = "Google Sheets API Example";
     private static final String CREDENTIALS_FILE_PATH = "src/main/resources/googleSheet/google.json"; // 서비스 계정 키 경로
@@ -33,16 +38,12 @@ public class GoogleSheetService {
     private static final GoogleSheetsHelper googleSheetsHelper = new GoogleSheetsHelper();
     private static final Logger log = LoggerFactory.getLogger(GoogleSheetService.class);
 
-    @Autowired
-    private EmployeeRepositoryMongo employeeRepositoryMongo;
-    @Autowired
-    private GroupQuestRepositoryMongo groupQuestRepositoryMongo;
-    @Autowired
-    private LeaderQuestRepository leaderQuestRepository;
-    @Autowired
-    private BoardRepositoryMongo boardRepositoryMongo;
-    @Autowired
-    private LeaderQuestExpRepository leaderQuestExpRepository;
+    private final EmployeeRepositoryMongo employeeRepositoryMongo;
+    private final GroupQuestRepositoryMongo groupQuestRepositoryMongo;
+    private final LeaderQuestRepository leaderQuestRepository;
+    private final BoardRepositoryMongo boardRepositoryMongo;
+    private final LeaderQuestExpRepository leaderQuestExpRepository;
+    private final ProjectRepository projectRepository;
 
     // TODO : Google Sheets API를 Service layer에서 분리해야 함
     public List<Object> getSheetData(String spreadsheetId, String range) throws IOException, GeneralSecurityException {
@@ -255,6 +256,25 @@ public class GoogleSheetService {
             // 새로운 데이터 저장
             leaderQuestExpRepository.saveAll(leaderQuestExpList);
             log.info("새로운 LeaderQuestExp 데이터 저장 완료: {}", affiliation);
+        } catch (Exception e) {
+            log.error("Google Sheets 동기화 중 오류 발생: ", e);
+            throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void syncProject(String spreadSheetId, String projectRANGE) {
+        try {
+            List<List<Object>> projectData = googleSheetsHelper.readSheetData(spreadSheetId, projectRANGE);
+            List<Project> projectList = GoogleSheetsConvert.convertToProject(projectData);
+
+            // 기존 데이터 삭제
+            projectRepository.deleteAll();
+            log.info("기존 Project 데이터 삭제 완료.");
+
+            // 새로운 데이터 저장
+            projectRepository.saveAll(projectList);
+            log.info("새로운 Project 데이터 저장 완료.");
         } catch (Exception e) {
             log.error("Google Sheets 동기화 중 오류 발생: ", e);
             throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());

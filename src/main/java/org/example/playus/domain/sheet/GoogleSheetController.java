@@ -26,6 +26,7 @@ public class GoogleSheetController {
     private static final String GroupQuestRANGE = "직무퀘 음성 1센터 1그룹"; // 그룹 퀘스트 범위
     private static final String LeaderQuestRANGE = "리더부여 퀘스트"; // 리더 퀘스트 범위
     private static final String BoardRANGE = "게시판!B6:D"; // 게시판 범위
+    private static final String ProjectRANGE = "참고. 전사 프로젝트!B7:H"; // 프로젝트 범위
 
     // 데이터 조회
     @GetMapping("/read")
@@ -102,6 +103,19 @@ public class GoogleSheetController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("리더 퀘스트 경험치 부분 동기화 실패: " + e.getMessage());
+        }
+    }
+
+    // 전사 프로젝트 동기화
+    @PostMapping("/sync/project")
+    @Operation(summary = "전사 프로젝트 동기화", description = "전사 프로젝트 데이터를 동기화")
+    public ResponseEntity<String> syncProject() {
+        try {
+            googleSheetService.syncProject(spreadSheetId, ProjectRANGE);
+            return ResponseEntity.ok("전사 프로젝트 동기화 완료");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("전사 프로젝트 동기화 실패: " + e.getMessage());
         }
     }
 }
