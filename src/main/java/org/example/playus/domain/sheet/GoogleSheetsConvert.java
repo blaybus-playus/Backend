@@ -1,5 +1,7 @@
 package org.example.playus.domain.sheet;
 
+import org.example.playus.domain.employeeExp.EmployeeExp;
+import org.example.playus.domain.employeeExp.ExpForYear;
 import org.example.playus.domain.employee.Account;
 import org.example.playus.domain.employee.Employee;
 import org.example.playus.domain.employee.PersonalInfo;
@@ -318,6 +320,45 @@ public class GoogleSheetsConvert {
         return evaluations;
     }
 
+    public static List<EmployeeExp> convertToEmployeeExp(String title, List<List<Object>> groupEmployeeExpData) {
+
+        List<EmployeeExp> employeeExps = new ArrayList<>();
+
+        Map<String, Integer> groupEmployeeExpHeaderIndexMap = createHeaderIndexMap(extractHeaders(groupEmployeeExpData));
+
+        for (int i = 1; i < groupEmployeeExpData.size(); i++) {
+            List<Object> groupEmployeeExpRow = groupEmployeeExpData.get(i);
+            ExpForYear expForYear = ExpForYear.builder()
+                    .totalExp(groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("2024년 획득한 총 경험치")) != null && !groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("2024년 획득한 총 경험치")).toString().isEmpty()
+                            ? Integer.parseInt(groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("2024년 획득한 총 경험치")).toString()) : 0)
+                    .firstHalfEvaluationExp(groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("상반기 인사평가")) != null && !groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("상반기 인사평가")).toString().isEmpty()
+                            ? Integer.parseInt(groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("상반기 인사평가")).toString()) : 0)
+                    .secondHalfEvaluationExp(groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("하반기 인사평가")) != null && !groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("하반기 인사평가")).toString().isEmpty()
+                            ? Integer.parseInt(groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("하반기 인사평가")).toString()) : 0)
+                    .groupQuestExp(groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("직무별 퀘스트")) != null && !groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("직무별 퀘스트")).toString().isEmpty()
+                            ? Integer.parseInt(groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("직무별 퀘스트")).toString()) : 0)
+                    .leaderQuestExp(groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("리더부여 퀘스트")) != null && !groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("리더부여 퀘스트")).toString().isEmpty()
+                            ? Integer.parseInt(groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("리더부여 퀘스트")).toString()) : 0)
+                    .projectExp(groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("전사 프로젝트")) != null && !groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("전사 프로젝트")).toString().isEmpty()
+                            ? Integer.parseInt(groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("전사 프로젝트")).toString()) : 0)
+                    .build();
+
+            EmployeeExp employeeExp = EmployeeExp.builder()
+                    .title(title)
+                    .employeeId(groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("사번")) != null && !groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("사번")).toString().isEmpty()
+                            ? Integer.parseInt(groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("사번")).toString()) : 0)
+                    .name(groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("이름")) == null ? "" : groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("이름")).toString())
+                    .affiliation(groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("소속")) == null ? "" : groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("소속")).toString())
+                    .department(groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("직무그룹")) != null && !groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("직무그룹")).toString().isEmpty()
+                            ? Integer.parseInt(groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("직무그룹")).toString()) : 0)
+                    .level(groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("레벨")) == null ? "" : groupEmployeeExpRow.get(groupEmployeeExpHeaderIndexMap.get("레벨")).toString())
+                    .expForYear(expForYear)
+                    .build();
+            employeeExps.add(employeeExp);
+            }
+        return employeeExps;
+    }
+
     public static List<List<Object>> convertToSheetFormat(List<Board> boards) {
         List<List<Object>> sheetData = new ArrayList<>();
 
@@ -352,7 +393,5 @@ public class GoogleSheetsConvert {
         }
         return headerIndexMap;
     }
-
-
 }
 
