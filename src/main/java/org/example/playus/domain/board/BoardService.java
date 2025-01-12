@@ -5,10 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.playus.domain.board.dto.BoardRequestDto;
 import org.example.playus.domain.board.dto.BoardResponseDto;
 import org.example.playus.domain.sheet.GoogleSheetsHelper;
+import org.example.playus.global.exception.CustomException;
+import org.example.playus.global.exception.ErrorCode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.swing.undo.CannotUndoException;
 import java.util.List;
 
 @Service
@@ -93,11 +96,11 @@ public class BoardService {
                 boards = boardRepository.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(keyword, keyword);
                 break;
             default:
-                throw new IllegalArgumentException("잘못된 검색 타입입니다.");
+                throw new CustomException(ErrorCode.INVALID_TYPE);
         }
 
         if (boards.isEmpty()) {
-            throw new IllegalArgumentException("검색 결과가 없습니다.");
+            throw new CustomException(ErrorCode.SEARCH_NOT_FOUND);
         }
 
         return boards.stream()
@@ -113,26 +116,41 @@ public class BoardService {
     @Transactional
     public BoardResponseDto updateBoard(Long id, BoardRequestDto boardRequestDto) {
         log.info("게시글 수정 시작: ID = {}", id);
-        Board board = boardRepository.findById(String.valueOf(id))
-                .orElseThrow(() -> new IllegalArgumentException("해당 ID의 게시글을 찾을 수 없습니다."));
 
-        // 게시글 내용 업데이트
+        Board board = boardRepository.findById(String.valueOf(id))
+                .orElseThrow(() -> new CustomException(ErrorCode.SHEET_NOT_FOUND));
+
         board.setTitle(boardRequestDto.getTitle().trim());
         board.setContent(boardRequestDto.getContent().trim());
-
         Board updatedBoard = boardRepository.save(board);
 
-        // Google Sheets 데이터 수정
-        List<Object> updatedRow = List.of(updatedBoard.getId(), updatedBoard.getTitle(), updatedBoard.getContent());
         try {
-            String rowRange = String.format("게시판!B%d:D%d", id + 6, id + 6);  // 행 번호 계산
+            List<List<Object>> sheetData = googleSheetsHelper.readSheetData(spreadsheetId, "게시판!A:Z");
+            int rowIndex = -1;
+
+            for (int i = 1; i < sheetData.size(); i++) {  // 첫 행은 헤더
+                List<Object> row = sheetData.get(i);
+                log.info("Google Sheets 행 번호 {} 데이터: {}", i + 1, row);  // 로그 추가
+                if (row.size() >= 2 && row.get(1).toString().equals(String.valueOf(id))) {  // B열에서 ID 비교
+                    rowIndex = i + 1;  // 실제 행 번호
+                    break;
+                }
+            }
+
+            if (rowIndex == -1) {
+                log.error("Google Sheets에서 해당 ID의 게시글을 찾을 수 없습니다.");
+                throw new CustomException(ErrorCode.SHEET_NOT_FOUND);
+            }
+
+            // Google Sheets 업데이트
+            List<Object> updatedRow = List.of(updatedBoard.getId(), updatedBoard.getTitle(), updatedBoard.getContent());
+            String rowRange = String.format("게시판!B%d:D%d", rowIndex, rowIndex);
             googleSheetsHelper.updateRow(spreadsheetId, rowRange, updatedRow);
+            log.info("Google Sheets 업데이트 완료: 행 번호 = {}", rowIndex);
         } catch (Exception e) {
             log.error("스프레드시트 업데이트 실패: {}", e.getMessage());
             throw new RuntimeException("구글 시트에 데이터 업데이트 실패: " + e.getMessage());
         }
-
-        log.info("게시글 수정 완료: ID = {}", id);
 
         return BoardResponseDto.builder()
                 .id(updatedBoard.getId())
@@ -142,25 +160,39 @@ public class BoardService {
                 .build();
     }
 
-    @Transactional
     public void deleteBoard(Long id) {
         log.info("게시글 삭제 시작: ID = {}", id);
+
         Board board = boardRepository.findById(String.valueOf(id))
-                .orElseThrow(() -> new IllegalArgumentException("해당 ID의 게시글을 찾을 수 없습니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.SHEET_NOT_FOUND));
 
         boardRepository.delete(board);
+        log.info("MongoDB에서 게시글 삭제 완료: ID = {}", id);
 
-        // Google Sheets 데이터 비우기
         try {
-            int rowIndex = id.intValue() + 6;  // Google Sheets의 행 번호 계산
-            String rowRange = String.format("게시판!B%d:D%d", rowIndex, rowIndex);  // 특정 행 범위
-            googleSheetsHelper.deleteRow(spreadsheetId, rowRange);  // 행을 빈 값으로 업데이트
-        } catch (Exception e) {
-            log.error("스프레드시트 비우기 실패: {}", e.getMessage());
-            throw new RuntimeException("구글 시트에서 데이터 비우기 실패: " + e.getMessage());
-        }
+            List<List<Object>> sheetData = googleSheetsHelper.readSheetData(spreadsheetId, "게시판!A:Z");
+            int rowIndex = -1;
 
-        log.info("게시글 삭제 완료: ID = {}", id);
+            for (int i = 1; i < sheetData.size(); i++) {
+                List<Object> row = sheetData.get(i);
+                if (row.size() >= 2 && row.get(1).toString().equals(String.valueOf(id))) {
+                    rowIndex = i + 1;  // 실제 행 번호
+                    break;
+                }
+            }
+
+            if (rowIndex == -1) {
+                log.error("Google Sheets에서 해당 ID의 게시글을 찾을 수 없습니다.");
+                throw new IllegalArgumentException("Google Sheets에서 해당 ID의 게시글을 찾을 수 없습니다.");
+            }
+
+            // 행 삭제
+            googleSheetsHelper.deleteRow(spreadsheetId, "게시판", rowIndex);
+            log.info("Google Sheets에서 행 삭제 완료: 행 번호 = {}", rowIndex);
+        } catch (Exception e) {
+            log.error("Google Sheets 행 삭제 실패: {}", e.getMessage());
+            throw new RuntimeException("Google Sheets 행 삭제 실패: " + e.getMessage());
+        }
     }
 
     private int getMaxBoardId() {

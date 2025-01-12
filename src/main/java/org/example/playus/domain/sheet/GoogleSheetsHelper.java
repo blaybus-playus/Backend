@@ -61,20 +61,38 @@ public class GoogleSheetsHelper {
                 .execute();
     }
 
-    public void deleteRow(String spreadsheetId, String range) throws IOException, GeneralSecurityException {
+    public void deleteRow(String spreadsheetId, String sheetName, int rowIndex) throws IOException, GeneralSecurityException {
         Sheets service = getSheetsService();
 
-        // 데이터 비우기 위한 빈 리스트 생성
-        List<List<Object>> emptyRow = List.of(List.of("", "", ""));  // 비어 있는 셀 값
+        // 시트 ID 가져오기 (시트 이름을 기반으로)
+        int sheetId = getSheetIdByName(spreadsheetId, sheetName);
 
-        log.info("Google Sheets 행 비우기 요청: range={}", range);
+        // 행 삭제 요청
+        Request deleteRowRequest = new Request().setDeleteDimension(new DeleteDimensionRequest()
+                .setRange(new DimensionRange()
+                        .setSheetId(sheetId)  // 시트 ID
+                        .setDimension("ROWS")  // 행 삭제
+                        .setStartIndex(rowIndex - 1)  // 삭제할 행의 시작 인덱스 (0부터 시작, 따라서 -1)
+                        .setEndIndex(rowIndex)  // 삭제할 행의 끝 인덱스 (1행 삭제)
+                ));
 
-        // 빈 값으로 해당 범위를 업데이트하여 행 비우기
-        ValueRange body = new ValueRange().setValues(emptyRow);
-        service.spreadsheets().values().update(spreadsheetId, range, body)
-                .setValueInputOption("RAW")
-                .execute();
+        BatchUpdateSpreadsheetRequest batchRequest = new BatchUpdateSpreadsheetRequest()
+                .setRequests(Collections.singletonList(deleteRowRequest));
 
-        log.info("Google Sheets 행 비우기 요청 완료: range={}", range);
+        service.spreadsheets().batchUpdate(spreadsheetId, batchRequest).execute();
+
+        log.info("Google Sheets에서 행 삭제 완료: sheetName={}, rowIndex={}", sheetName, rowIndex);
+    }
+
+    // 시트 이름 기반으로 시트 고유 ID 찾는 로직
+    private int getSheetIdByName(String spreadsheetId, String sheetName) throws IOException, GeneralSecurityException {
+        Sheets service = getSheetsService();
+        Spreadsheet spreadsheet = service.spreadsheets().get(spreadsheetId).execute();
+        for (Sheet sheet : spreadsheet.getSheets()) {
+            if (sheet.getProperties().getTitle().equals(sheetName)) {
+                return sheet.getProperties().getSheetId();  // 시트 ID 반환
+            }
+        }
+        throw new IllegalArgumentException("해당 이름의 시트를 찾을 수 없습니다: " + sheetName);
     }
 }
