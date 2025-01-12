@@ -7,10 +7,7 @@ import org.example.playus.domain.login.dto.LoginRequestDto;
 import org.example.playus.domain.login.dto.LoginResponseDto;
 import org.example.playus.global.common.CommonResponse;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -19,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class LoginController {
     private final LoginService loginService;
 
-    @GetMapping("/login")
+    @PostMapping("/login")
     @Operation(summary = "login", description = "로그인 기능")
     public ResponseEntity<CommonResponse> login(@RequestBody LoginRequestDto requestDto) {
         try {
