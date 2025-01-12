@@ -28,6 +28,7 @@ public class GoogleSheetController {
     private static final String BoardRANGE = "게시판!B6:D"; // 게시판 범위
     private static final String ProjectRANGE = "참고. 전사 프로젝트!B7:H"; // 프로젝트 범위
     private static final String EvaluationRange = "참고. 인사평가"; // 인사평가 범위
+    private static final String GroupEmployeeExpRange = "올해 경험치"; // 팀원별 경험치 현황 범위
 
     // 데이터 조회
     @GetMapping("/read")
@@ -130,6 +131,19 @@ public class GoogleSheetController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("인사 평가 동기화 실패: " + e.getMessage());
+        }
+    }
+
+    // 팀원별 경험치 현황 동기화
+    @PostMapping("/sync/group/exp")
+    @Operation(summary = "팀원별 경험치 현황 동기화", description = "팀원별 경험치 현황 데이터를 동기화")
+    public ResponseEntity<String> syncGroupExp() {
+        try {
+            googleSheetService.syncGroupEmployeeExp(spreadSheetId, GroupEmployeeExpRange);
+            return ResponseEntity.ok("팀원별 경험치 현황 동기화 완료");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("팀원별 경험치 현황 동기화 실패: " + e.getMessage());
         }
     }
 }

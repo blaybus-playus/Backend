@@ -4,15 +4,15 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import jakarta.transaction.Transactional;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import org.example.playus.domain.employeeExp.EmployeeExp;
+import org.example.playus.domain.employeeExp.EmployeeExpRepository;
 import org.example.playus.domain.board.Board;
 import org.example.playus.domain.board.BoardRepositoryMongo;
 import org.example.playus.domain.employee.Employee;
 import org.example.playus.domain.employee.EmployeeRepositoryMongo;
 import org.example.playus.domain.evaluation.Evaluation;
 import org.example.playus.domain.evaluation.EvaluationRepository;
-import org.example.playus.domain.evaluation.PersonalEvaluation;
 import org.example.playus.domain.project.Project;
 import org.example.playus.domain.project.ProjectRepository;
 import org.example.playus.domain.quest.groupGuset.GroupQuest;
@@ -23,7 +23,6 @@ import org.example.playus.domain.quest.leaderQuest.LeaderQuestExpRepository;
 import org.example.playus.domain.quest.leaderQuest.LeaderQuestRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.FileInputStream;
@@ -48,6 +47,7 @@ public class GoogleSheetService {
     private final LeaderQuestExpRepository leaderQuestExpRepository;
     private final ProjectRepository projectRepository;
     private final EvaluationRepository evaluationRepository;
+    private final EmployeeExpRepository employeeExpRepository;
 
     // TODO : Google Sheets API를 Service layer에서 분리해야 함
     public List<Object> getSheetData(String spreadsheetId, String range) throws IOException, GeneralSecurityException {
@@ -317,5 +317,27 @@ public class GoogleSheetService {
             throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
         }
 
+    }
+
+    @Transactional
+    public void syncGroupEmployeeExp(String spreadSheetId, String groupEmployeeExpRange) {
+        try {
+            String titleRange = groupEmployeeExpRange + "!B23";
+            String title = googleSheetsHelper.readCell(spreadSheetId, titleRange);
+
+            String groupEmployeeExpDataRange = groupEmployeeExpRange + "!B25:L";
+
+            List<List<Object>> groupEmployeeExpData = googleSheetsHelper.readSheetData(spreadSheetId, groupEmployeeExpDataRange);
+            List<EmployeeExp> employeeExpList = GoogleSheetsConvert.convertToEmployeeExp(title, groupEmployeeExpData);
+
+            // 기존 데이터 삭제
+            employeeExpRepository.deleteAll();
+
+            // 새로운 데이터 저장
+            employeeExpRepository.saveAll(employeeExpList);
+        } catch (Exception e) {
+            log.error("Google Sheets 동기화 중 오류 발생: ", e);
+            throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
+        }
     }
 }

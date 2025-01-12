@@ -14,7 +14,8 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
         "org.example.playus.domain.quest",
         "org.example.playus.domain.board",
         "org.example.playus.domain.project",
-        "org.example.playus.domain.evaluation"
+        "org.example.playus.domain.evaluation",
+        "org.example.playus.domain.employeeExp"
 })
 public class MongoConfig {
 
