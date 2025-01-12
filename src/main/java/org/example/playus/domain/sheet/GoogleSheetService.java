@@ -81,25 +81,39 @@ public class GoogleSheetService {
         }
     }
 
-    @Transactional
-    public void syncGoogleSheetToMongo(String spreadsheetId, String range) throws Exception {
-        try {
-            // Google Sheets에서 데이터 읽기
-            List<List<Object>> sheetData = googleSheetsHelper.readSheetData(spreadsheetId, range);
 
-            // 데이터 읽기 확인
+
+    @Transactional
+    public void syncAll(String spreadSheetId, String employeeRange, String groupQuestRange, String leaderQuestRange, String boardRANGE, String projectRANGE, String evaluationRange, String groupEmployeeExpRange) {
+        try {
+            syncEmployeeData(spreadSheetId, employeeRange);
+            syncGroupQuestData(spreadSheetId, groupQuestRange);
+            syncLeaderQuestData(spreadSheetId, leaderQuestRange);
+            syncLeaderQuestExp(spreadSheetId, leaderQuestRange);
+            //syncBoard(spreadSheetId, boardRANGE);
+            syncProject(spreadSheetId, projectRANGE);
+            syncEvaluation(spreadSheetId, evaluationRange);
+            syncGroupEmployeeExp(spreadSheetId, groupEmployeeExpRange);
+
+        } catch (Exception e) {
+            log.error("Google Sheets 동기화 중 오류 발생: ", e);
+            throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void syncEmployeeData(String spreadsheetId, String range) throws Exception {
+        try {
+            List<List<Object>> sheetData = googleSheetsHelper.readSheetData(spreadsheetId, range);
             log.info("Sheet Data Read: {}", sheetData);
 
-            // 데이터를 User 객체로 변환
             List<Employee> employees = GoogleSheetsConvert.convertToUsers(sheetData);
             for(Employee employee : employees) {
                 System.out.println(employee);
             }
 
-            // MongoDB에 저장 및 저장된 결과 확인
             List<Employee> savedEmployees = employeeRepositoryMongo.saveAll(employees);
 
-            // 저장 성공 여부 확인
             if (savedEmployees.size() == employees.size()) {
                 log.info("All users saved successfully.");
             } else {
@@ -112,19 +126,7 @@ public class GoogleSheetService {
     }
 
     @Transactional
-    public void syncAll(String spreadSheetId, String employeeRange, String groupQuestRange,String leaderQuestRange) {
-        try {
-            syncGroupQuestData(spreadSheetId, groupQuestRange);
-            syncLeaderQuestData(spreadSheetId, leaderQuestRange);
-
-            log.info("GroupQuest 데이터 동기화 완료");
-        } catch (Exception e) {
-            log.error("Google Sheets 동기화 중 오류 발생: ", e);
-            throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
-        }
-    }
-
-    private void syncGroupQuestData(String spreadSheetId, String groupQuestRange) throws Exception {
+    public void syncGroupQuestData(String spreadSheetId, String groupQuestRange) throws Exception {
 
         List<GroupQuest> newGroupQuests = moduleGroupQuestData(spreadSheetId, groupQuestRange);
 
@@ -184,17 +186,30 @@ public class GoogleSheetService {
         }
     }
 
-    private List<GroupQuest> moduleGroupQuestData(String spreadSheetId, String groupQuestRange) throws Exception {
-        String groupRange = groupQuestRange + "!B2:D3";
-        String expPerWeekRange = groupQuestRange + "!B5:D";
-        String scoreInfo = groupQuestRange + "!F2:G3";
+    @Transactional
+    public void syncLeaderQuestExp(String spreadSheetId, String leaderQuestRANGE) {
+        try {
+            String affiliationRange = leaderQuestRANGE + "!J8";
+            String affiliation = googleSheetsHelper.readCell(spreadSheetId, affiliationRange);
 
-        List<List<Object>> groupData = googleSheetsHelper.readSheetData(spreadSheetId, groupRange);
-        List<List<Object>> expPerWeekData = googleSheetsHelper.readSheetData(spreadSheetId, expPerWeekRange);
-        List<List<Object>> scoreData = googleSheetsHelper.readSheetData(spreadSheetId, scoreInfo);
+            String leaderQuestRange = leaderQuestRANGE + "!B9:G";
+            List<List<Object>> leaderQuestExpData = googleSheetsHelper.readSheetData(spreadSheetId, leaderQuestRange);
+            List<LeaderQuestExp> leaderQuestExpList = GoogleSheetsConvert.convertToLeaderQuestExp(affiliation, leaderQuestExpData);
 
-        List<GroupQuest> groupQuestList = GoogleSheetsConvert.convertToGroupQuest(groupData, expPerWeekData, scoreData);
-        return groupQuestList;
+            // 기존 데이터 삭제
+            List<LeaderQuestExp> existingLeaderQuestExps = leaderQuestExpRepository.findAllByAffiliation(affiliation);
+            if (!existingLeaderQuestExps.isEmpty()) {
+                leaderQuestExpRepository.deleteAll(existingLeaderQuestExps);
+                log.info("기존 LeaderQuestExp 데이터 삭제 완료: {}", affiliation);
+            }
+
+            // 새로운 데이터 저장
+            leaderQuestExpRepository.saveAll(leaderQuestExpList);
+            log.info("새로운 LeaderQuestExp 데이터 저장 완료: {}", affiliation);
+        } catch (Exception e) {
+            log.error("Google Sheets 동기화 중 오류 발생: ", e);
+            throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
+        }
     }
 
     // 1.구글 데이터를 읽어 mongoDB에 저장 2.mongoDB 데이터를 다시 읽어와 구글 데이터에 업데이트
@@ -237,32 +252,6 @@ public class GoogleSheetService {
         } catch (Exception e) {
             log.error("게시글 동기화 중 오류 발생: ", e);
             throw new RuntimeException("게시글 동기화 중 오류 발생: " + e.getMessage());
-        }
-    }
-
-    @Transactional
-    public void syncLeaderQuestExp(String spreadSheetId, String leaderQuestRANGE) {
-        try {
-            String affiliationRange = leaderQuestRANGE + "!J8";
-            String affiliation = googleSheetsHelper.readCell(spreadSheetId, affiliationRange);
-
-            String leaderQuestRange = leaderQuestRANGE + "!B9:G";
-            List<List<Object>> leaderQuestExpData = googleSheetsHelper.readSheetData(spreadSheetId, leaderQuestRange);
-            List<LeaderQuestExp> leaderQuestExpList = GoogleSheetsConvert.convertToLeaderQuestExp(affiliation, leaderQuestExpData);
-
-            // 기존 데이터 삭제
-            List<LeaderQuestExp> existingLeaderQuestExps = leaderQuestExpRepository.findAllByAffiliation(affiliation);
-            if (!existingLeaderQuestExps.isEmpty()) {
-                leaderQuestExpRepository.deleteAll(existingLeaderQuestExps);
-                log.info("기존 LeaderQuestExp 데이터 삭제 완료: {}", affiliation);
-            }
-
-            // 새로운 데이터 저장
-            leaderQuestExpRepository.saveAll(leaderQuestExpList);
-            log.info("새로운 LeaderQuestExp 데이터 저장 완료: {}", affiliation);
-        } catch (Exception e) {
-            log.error("Google Sheets 동기화 중 오류 발생: ", e);
-            throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
         }
     }
 
@@ -339,5 +328,18 @@ public class GoogleSheetService {
             log.error("Google Sheets 동기화 중 오류 발생: ", e);
             throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
         }
+    }
+
+    private List<GroupQuest> moduleGroupQuestData(String spreadSheetId, String groupQuestRange) throws Exception {
+        String groupRange = groupQuestRange + "!F10:H11";
+        String expPerWeekRange = groupQuestRange + "!B13:D";
+        String scoreInfo = groupQuestRange + "!B10:C11";
+
+        List<List<Object>> groupData = googleSheetsHelper.readSheetData(spreadSheetId, groupRange);
+        List<List<Object>> expPerWeekData = googleSheetsHelper.readSheetData(spreadSheetId, expPerWeekRange);
+        List<List<Object>> scoreData = googleSheetsHelper.readSheetData(spreadSheetId, scoreInfo);
+
+        List<GroupQuest> groupQuestList = GoogleSheetsConvert.convertToGroupQuest(groupData, expPerWeekData, scoreData);
+        return groupQuestList;
     }
 }

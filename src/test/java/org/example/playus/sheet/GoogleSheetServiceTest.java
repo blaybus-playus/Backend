@@ -65,7 +65,7 @@ public class GoogleSheetServiceTest {
     }
 
     @Test
-    public void testSyncGoogleSheetToMongo() throws Exception {
+    public void testSyncEmployeeData() throws Exception {
         List<List<Object>> mockSheetData = List.of(
                 List.of("사번1", "이름1", "입사일1", "소속1", "직무그룹1", "레벨1", "아이디1", "기본패스워드1", "변경패스워드1"),
                 List.of("사번2", "이름2", "입사일2", "소속2", "직무그룹2", "레벨2", "아이디2", "기본패스워드2", "변경패스워드2")
@@ -74,18 +74,18 @@ public class GoogleSheetServiceTest {
         when(googleSheetsHelper.readSheetData(anyString(), anyString())).thenReturn(mockSheetData);
         when(employeeRepositoryMongo.saveAll(anyList())).thenReturn(mockEmployees);
 
-        googleSheetService.syncGoogleSheetToMongo("spreadsheetId", "range");
+        googleSheetService.syncEmployeeData("spreadsheetId", "range");
 
         verify(googleSheetsHelper, times(1)).readSheetData(anyString(), anyString());
         verify(employeeRepositoryMongo, times(1)).saveAll(anyList());
     }
 
     @Test
-    public void testSyncGoogleSheetToMongo_Exception() throws Exception {
+    public void testSyncEmployeeData_Exception() throws Exception {
         when(googleSheetsHelper.readSheetData(anyString(), anyString())).thenThrow(new RuntimeException("Test Exception"));
 
         Exception exception = assertThrows(RuntimeException.class, () -> {
-            googleSheetService.syncGoogleSheetToMongo("spreadsheetId", "range");
+            googleSheetService.syncEmployeeData("spreadsheetId", "range");
         });
 
         assertEquals("Error while syncing Google Sheets to MongoDB: Test Exception", exception.getMessage());
