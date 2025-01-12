@@ -22,12 +22,12 @@ public class GoogleSheetController {
     private String spreadSheetId; // 스프레드시트 ID
 
     private static final String RANGE = "요구사항!B2:D2"; // 읽을 셀 범위
-    private static final String EmployeeRANGE = "시트10!B2:V"; // 직원 데이터 범위
-    private static final String GroupQuestRANGE = "직무퀘 음성 1센터 1그룹"; // 그룹 퀘스트 범위
+    private static final String EmployeeRANGE = "구성원 정보!B9:V"; // 구성원 정보
+    private static final String GroupQuestRANGE = "직무별 퀘스트"; // 그룹 퀘스트 범위
     private static final String LeaderQuestRANGE = "리더부여 퀘스트"; // 리더 퀘스트 범위
     private static final String BoardRANGE = "게시판!B6:D"; // 게시판 범위
-    private static final String ProjectRANGE = "참고. 전사 프로젝트!B7:H"; // 프로젝트 범위
-    private static final String EvaluationRange = "참고. 인사평가"; // 인사평가 범위
+    private static final String ProjectRANGE = "전사 프로젝트!B7:H"; // 프로젝트 범위
+    private static final String EvaluationRange = "인사평가"; // 인사평가 범위
     private static final String GroupEmployeeExpRange = "올해 경험치"; // 팀원별 경험치 현황 범위
 
     // 데이터 조회
@@ -48,7 +48,7 @@ public class GoogleSheetController {
     @Operation(summary = "전체 데이터 동기화", description = "모든 데이터를 동기화")
     public ResponseEntity<String> syncAllData() {
         try {
-            googleSheetService.syncAll(spreadSheetId, EmployeeRANGE, GroupQuestRANGE, LeaderQuestRANGE);
+            googleSheetService.syncAll(spreadSheetId, EmployeeRANGE, GroupQuestRANGE, LeaderQuestRANGE, BoardRANGE, ProjectRANGE, EvaluationRange, GroupEmployeeExpRange);
             return ResponseEntity.ok("전체 데이터 동기화 완료");
         } catch (Exception e) {
             e.printStackTrace();
@@ -61,7 +61,7 @@ public class GoogleSheetController {
     @Operation(summary = "직원 데이터 동기화", description = "직원 데이터를 MongoDB와 동기화")
     public ResponseEntity<String> syncEmployees() {
         try {
-            googleSheetService.syncGoogleSheetToMongo(spreadSheetId, EmployeeRANGE);
+            googleSheetService.syncEmployeeData(spreadSheetId, EmployeeRANGE);
             return ResponseEntity.ok("직원 데이터 동기화 완료");
         } catch (Exception e) {
             e.printStackTrace();

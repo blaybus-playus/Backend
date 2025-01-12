@@ -40,7 +40,7 @@ public class GoogleSheetControllerTest {
 
     @Test
     public void testSyncUsers() throws Exception {
-        Mockito.doNothing().when(googleSheetService).syncGoogleSheetToMongo(anyString(), anyString());
+        Mockito.doNothing().when(googleSheetService).syncEmployeeData(anyString(), anyString());
 
         mockMvc.perform(post("/google/sync"))
                 .andExpect(status().isOk())
