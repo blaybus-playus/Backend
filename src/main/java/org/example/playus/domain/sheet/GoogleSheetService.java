@@ -322,26 +322,39 @@ public class GoogleSheetService {
     }
 
     @Transactional
-    public void syncGroupEmployeeExp(String spreadSheetId, String groupEmployeeExpRange) {
-        try {
-            String titleRange = groupEmployeeExpRange + "!B23";
+public void syncGroupEmployeeExp(String spreadSheetId, String groupEmployeeExpRange) {
+    try {
+        for (int year = 2022; year <= 2024; year++) {
+            String yearRange = year + " " + groupEmployeeExpRange;
+
+            String titleRange = yearRange + "!B23";
             String title = googleSheetsHelper.readCell(spreadSheetId, titleRange);
 
-            String groupEmployeeExpDataRange = groupEmployeeExpRange + "!B25:L";
+            int maxExp = Integer.parseInt(googleSheetsHelper.readCell(spreadSheetId, yearRange + "!C14"))
+                    + Integer.parseInt(googleSheetsHelper.readCell(spreadSheetId, yearRange + "!E14"))
+                    + Integer.parseInt(googleSheetsHelper.readCell(spreadSheetId, yearRange + "!G14"));
 
+            String groupEmployeeExpDataRange = yearRange + "!B25:L";
             List<List<Object>> groupEmployeeExpData = googleSheetsHelper.readSheetData(spreadSheetId, groupEmployeeExpDataRange);
             List<EmployeeExp> employeeExpList = GoogleSheetsConvert.convertToEmployeeExp(title, groupEmployeeExpData);
 
-            // 기존 데이터 삭제
-            employeeExpRepository.deleteAll();
+            // 연도 필드 설정
+            for (EmployeeExp employeeExp : employeeExpList) {
+                employeeExp.setYear(year);
+                employeeExp.setMaxExp(maxExp);
+            }
+
+            // 기존 데이터 삭제 (해당 연도 데이터만 삭제)
+            employeeExpRepository.deleteByYear(year);
 
             // 새로운 데이터 저장
             employeeExpRepository.saveAll(employeeExpList);
-        } catch (Exception e) {
-            log.error("Google Sheets 동기화 중 오류 발생: ", e);
-            throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
         }
+    } catch (Exception e) {
+        log.error("Google Sheets 동기화 중 오류 발생: ", e);
+        throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
     }
+}
 
     @Transactional
     public void syncLevelExp(String spreadSheetId, String levelExpRange) {

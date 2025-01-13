@@ -27,7 +27,7 @@ public class EmployeeService {
         Employee employee = employeeRepository.findById(String.valueOf(employeeId))
                 .orElseThrow(() -> new CustomException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
-        EmployeeExp employeeExp = employeeExpRepository.findByEmployeeId(employeeId)
+        EmployeeExp employeeExp = employeeExpRepository.findByEmployeeIdAndYear(employeeId, 2024)
                 .orElseThrow(() -> new CustomException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
         // 레벨 그룹을 찾기 위해 Employee의 레벨에서 첫 글자 추출
@@ -66,6 +66,7 @@ public class EmployeeService {
             totalExp += point;
         }
 
+
         return EmployeeExpReponseDto.builder()
                 .name(employee.getPersonalInfo().getName())
                 .employeeId(Integer.parseInt(employee.getEmployeeId()))
@@ -75,6 +76,7 @@ public class EmployeeService {
                 .thisYearExp(employeeExp.getExpForYear().getTotalExp())
                 .totalExp(totalExp)
                 .nextLevelExp(nextLevelExp)
+                .limitExp(employeeExp.getMaxExp() / 2)
                 .build();
     }
 }
