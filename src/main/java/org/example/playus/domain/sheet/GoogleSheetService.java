@@ -8,6 +8,9 @@ import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.example.playus.domain.employee.Employee;
+import org.example.playus.domain.employeeExp.EmployeeExp;
+import org.example.playus.domain.employeeExp.EmployeeExpRepository;
 import org.example.playus.domain.board.Board;
 import org.example.playus.domain.board.BoardRepositoryMongo;
 import org.example.playus.domain.employee.Employee;
@@ -209,7 +212,7 @@ public class GoogleSheetService {
             // 기존 데이터 삭제
             List<LeaderQuestExp> existingLeaderQuestExps = leaderQuestExpRepository.findAllByAffiliation(affiliation);
             if (!existingLeaderQuestExps.isEmpty()) {
-                leaderQuestExpRepository.deleteAll(existingLeaderQuestExps);
+                leaderQuestExpRepository.deleteAll();
                 log.info("기존 LeaderQuestExp 데이터 삭제 완료: {}", affiliation);
             }
 

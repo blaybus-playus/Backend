@@ -3,6 +3,7 @@ package org.example.playus.domain.quest.groupGuset;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import org.example.playus.global.Timestamped;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -11,7 +12,7 @@ import java.util.List;
 
 @Getter
 @Document(collection = "groupQuest")
-public class GroupQuest {
+public class GroupQuest extends Timestamped {
     @Id
     private String id; // 그룹 퀘스트 ID
 
