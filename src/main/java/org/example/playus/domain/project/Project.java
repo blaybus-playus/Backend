@@ -2,11 +2,12 @@ package org.example.playus.domain.project;
 
 import lombok.Builder;
 import lombok.Getter;
+import org.example.playus.global.Timestamped;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Getter
 @Document(collection = "project")
-public class Project {
+public class Project extends Timestamped {
     private int month; // 월
     private int day; // 일
     private int employeeId; // 직원 ID

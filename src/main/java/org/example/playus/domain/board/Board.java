@@ -1,10 +1,11 @@
 package org.example.playus.domain.board;
 
+import org.example.playus.global.Timestamped;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "boards")
-public class Board {
+public class Board extends Timestamped {
 
     @Id
     private String id; // MongoDB ObjectId

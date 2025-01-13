@@ -1,6 +1,7 @@
 package org.example.playus.domain.employee;
 
 import lombok.Getter;
+import org.example.playus.global.Timestamped;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -8,7 +9,7 @@ import java.util.Map;
 
 @Getter
 @Document(collection = "employee")
-public class Employee {
+public class Employee extends Timestamped {
 
     @Id
     private String employeeId; // MongoDB에서 _id 역할

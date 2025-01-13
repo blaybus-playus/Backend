@@ -2,11 +2,12 @@ package org.example.playus.domain.quest.leaderQuest;
 
 import lombok.Builder;
 import lombok.Getter;
+import org.example.playus.global.Timestamped;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Getter
 @Document(collection = "LeaderQuestExp")
-public class LeaderQuestExp {
+public class LeaderQuestExp extends Timestamped {
     private String affiliation; // 소속
 
     private LeaderQuestEmployeeList leaderQuestEmployeeList; // 리더 퀘스트 직원
