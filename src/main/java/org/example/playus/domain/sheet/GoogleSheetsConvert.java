@@ -8,6 +8,8 @@ import org.example.playus.domain.employee.PersonalInfo;
 import org.example.playus.domain.board.Board;
 import org.example.playus.domain.evaluation.Evaluation;
 import org.example.playus.domain.evaluation.PersonalEvaluation;
+import org.example.playus.domain.level.Level;
+import org.example.playus.domain.level.LevelExp;
 import org.example.playus.domain.project.Project;
 import org.example.playus.domain.quest.groupGuset.*;
 import org.example.playus.domain.quest.leaderQuest.LeaderQuest;
@@ -359,6 +361,31 @@ public class GoogleSheetsConvert {
         return employeeExps;
     }
 
+
+    public static List<Level> convertToLevelExp(String levelGroup, List<List<Object>> levelData) {
+        List<Level> levels = new ArrayList<>();
+        List<LevelExp> levelExps = new ArrayList<>();
+
+        Map<String, Integer> levelHeaderIndexMap = createHeaderIndexMap(extractHeaders(levelData));
+
+        for (int i = 1; i < levelData.size(); i++) {
+            List<Object> levelRow = levelData.get(i);
+            LevelExp levelExp = LevelExp.builder()
+                    .level(levelRow.get(levelHeaderIndexMap.get("레벨")) == null ? "" : levelRow.get(levelHeaderIndexMap.get("레벨")).toString())
+                    .exp(levelHeaderIndexMap.get("총 필요 경험치") != null && !levelRow.get(levelHeaderIndexMap.get("총 필요 경험치")).toString().isEmpty()
+                            ? Integer.parseInt(levelRow.get(levelHeaderIndexMap.get("총 필요 경험치")).toString()) : 0)
+                    .build();
+            levelExps.add(levelExp);
+        }
+        Level level = Level.builder()
+                .levelGroup(levelGroup)
+                .levelExp(levelExps)
+                .build();
+        levels.add(level);
+
+        return levels;
+    }
+
     public static List<List<Object>> convertToSheetFormat(List<Board> boards) {
         List<List<Object>> sheetData = new ArrayList<>();
 
@@ -393,5 +420,6 @@ public class GoogleSheetsConvert {
         }
         return headerIndexMap;
     }
+
 }
 

@@ -13,6 +13,8 @@ import org.example.playus.domain.employee.Employee;
 import org.example.playus.domain.employee.EmployeeRepositoryMongo;
 import org.example.playus.domain.evaluation.Evaluation;
 import org.example.playus.domain.evaluation.EvaluationRepository;
+import org.example.playus.domain.level.Level;
+import org.example.playus.domain.level.LevelRepository;
 import org.example.playus.domain.project.Project;
 import org.example.playus.domain.project.ProjectRepository;
 import org.example.playus.domain.quest.groupGuset.GroupQuest;
@@ -48,6 +50,7 @@ public class GoogleSheetService {
     private final ProjectRepository projectRepository;
     private final EvaluationRepository evaluationRepository;
     private final EmployeeExpRepository employeeExpRepository;
+    private final LevelRepository levelRepository;
 
     // TODO : Google Sheets API를 Service layer에서 분리해야 함
     public List<Object> getSheetData(String spreadsheetId, String range) throws IOException, GeneralSecurityException {
@@ -324,6 +327,44 @@ public class GoogleSheetService {
 
             // 새로운 데이터 저장
             employeeExpRepository.saveAll(employeeExpList);
+        } catch (Exception e) {
+            log.error("Google Sheets 동기화 중 오류 발생: ", e);
+            throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void syncLevelExp(String spreadSheetId, String levelExpRange) {
+        try{
+            String levelF = googleSheetsHelper.readCell(spreadSheetId,levelExpRange + "!B7");
+            String levelB = googleSheetsHelper.readCell(spreadSheetId,levelExpRange + "!E7");
+            String levelG = googleSheetsHelper.readCell(spreadSheetId,levelExpRange + "!H7");
+            String levelT = googleSheetsHelper.readCell(spreadSheetId,levelExpRange + "!K7");
+
+            String levelFDataRange = levelExpRange + "!B8:C";
+            String levelBDataRange = levelExpRange + "!E8:F";
+            String levelGDataRange = levelExpRange + "!H8:I";
+            String levelTDataRange = levelExpRange + "!K8:L";
+
+            List<List<Object>> levelFData = googleSheetsHelper.readSheetData(spreadSheetId, levelFDataRange);
+            List<List<Object>> levelBData = googleSheetsHelper.readSheetData(spreadSheetId, levelBDataRange);
+            List<List<Object>> levelGData = googleSheetsHelper.readSheetData(spreadSheetId, levelGDataRange);
+            List<List<Object>> levelTData = googleSheetsHelper.readSheetData(spreadSheetId, levelTDataRange);
+
+            List<Level> levelFList = GoogleSheetsConvert.convertToLevelExp(levelF, levelFData);
+            List<Level> levelBList = GoogleSheetsConvert.convertToLevelExp(levelB, levelBData);
+            List<Level> levelGList = GoogleSheetsConvert.convertToLevelExp(levelG, levelGData);
+            List<Level> levelTList = GoogleSheetsConvert.convertToLevelExp(levelT, levelTData);
+
+            // 기존 데이터 삭제
+            levelRepository.deleteAll();
+
+            // 새로운 데이터 저장
+            levelRepository.saveAll(levelFList);
+            levelRepository.saveAll(levelBList);
+            levelRepository.saveAll(levelGList);
+            levelRepository.saveAll(levelTList);
+
         } catch (Exception e) {
             log.error("Google Sheets 동기화 중 오류 발생: ", e);
             throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
