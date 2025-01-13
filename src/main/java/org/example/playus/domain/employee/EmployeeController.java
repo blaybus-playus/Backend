@@ -25,7 +25,7 @@ public class EmployeeController {
             CommonResponse response = new CommonResponse<>("회원 경험치 조회", 200, responseDto);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            CommonResponse response = new CommonResponse<>("회원 경험치 조회 실패", 500, null);
+            CommonResponse response = new CommonResponse<>("회원 경험치 조회 실패", 500, e.getMessage());
             return ResponseEntity.status(500).body(response);
         }
     }

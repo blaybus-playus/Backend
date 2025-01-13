@@ -28,7 +28,7 @@ public class GoogleSheetController {
     private static final String BoardRANGE = "게시판!B6:D"; // 게시판 범위
     private static final String ProjectRANGE = "전사 프로젝트!B7:H"; // 프로젝트 범위
     private static final String EvaluationRange = "인사평가"; // 인사평가 범위
-    private static final String GroupEmployeeExpRange = "올해 경험치"; // 팀원별 경험치 현황 범위
+    private static final String GroupEmployeeExpRange = "경험치"; // 팀원별 경험치 현황 범위
     private static final String LevelExpRange = "레벨별 경험치"; // 레벨별 경험치 범위
 
     // 데이터 조회
