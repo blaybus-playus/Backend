@@ -29,6 +29,7 @@ public class GoogleSheetController {
     private static final String ProjectRANGE = "전사 프로젝트!B7:H"; // 프로젝트 범위
     private static final String EvaluationRange = "인사평가"; // 인사평가 범위
     private static final String GroupEmployeeExpRange = "올해 경험치"; // 팀원별 경험치 현황 범위
+    private static final String LevelExpRange = "레벨별 경험치"; // 레벨별 경험치 범위
 
     // 데이터 조회
     @GetMapping("/read")
@@ -48,7 +49,8 @@ public class GoogleSheetController {
     @Operation(summary = "전체 데이터 동기화", description = "모든 데이터를 동기화")
     public ResponseEntity<String> syncAllData() {
         try {
-            googleSheetService.syncAll(spreadSheetId, EmployeeRANGE, GroupQuestRANGE, LeaderQuestRANGE, BoardRANGE, ProjectRANGE, EvaluationRange, GroupEmployeeExpRange);
+            googleSheetService.syncAll(spreadSheetId, EmployeeRANGE, GroupQuestRANGE, LeaderQuestRANGE, BoardRANGE,
+                    ProjectRANGE, EvaluationRange, GroupEmployeeExpRange, LevelExpRange);
             return ResponseEntity.ok("전체 데이터 동기화 완료");
         } catch (Exception e) {
             e.printStackTrace();
@@ -144,6 +146,19 @@ public class GoogleSheetController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("팀원별 경험치 현황 동기화 실패: " + e.getMessage());
+        }
+    }
+
+    // 레벨 별 경험치
+    @PostMapping("/sync/level/exp")
+    @Operation(summary = "레벨 별 경험치 동기화", description = "레벨 별 경험치 데이터를 동기화")
+    public ResponseEntity<String> syncLevelExp() {
+        try {
+            googleSheetService.syncLevelExp(spreadSheetId, LevelExpRange);
+            return ResponseEntity.ok("레벨 별 경험치 동기화 완료");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("레벨 별 경험치 동기화 실패: " + e.getMessage());
         }
     }
 }
