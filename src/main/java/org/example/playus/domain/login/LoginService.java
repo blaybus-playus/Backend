@@ -1,6 +1,7 @@
 package org.example.playus.domain.login;
 
 import lombok.RequiredArgsConstructor;
+import org.example.playus.domain.admin.Role;
 import org.example.playus.domain.employee.Account;
 import org.example.playus.domain.employee.Employee;
 import org.example.playus.domain.employee.EmployeeRepositoryMongo;
@@ -37,8 +38,10 @@ public class LoginService {
                 .updatedPassword(null)
                 .build();
 
-        String accessToken = jwtUtil.createToken(username, JwtUtil.ACCESS_TOKEN_EXPIRATION);
-        String refreshToken = jwtUtil.createToken(username, JwtUtil.REFRESH_TOKEN_EXPIRATION);
+        Role role = loginEmployee.getAdmin() != null ? loginEmployee.getAdmin().getRole() : Role.ROLE_USER;  // 기본 ROLE_USER로 설정
+
+        String accessToken = jwtUtil.createToken(username, role, JwtUtil.ACCESS_TOKEN_EXPIRATION);
+        String refreshToken = jwtUtil.createToken(username, role, JwtUtil.REFRESH_TOKEN_EXPIRATION);
 
         TokenStore tokenStore = TokenStore.builder()
                 .accessToken(accessToken)
