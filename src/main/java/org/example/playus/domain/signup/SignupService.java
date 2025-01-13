@@ -2,6 +2,8 @@ package org.example.playus.domain.signup;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.playus.domain.admin.Admin;
+import org.example.playus.domain.admin.Role;
 import org.example.playus.domain.employee.Account;
 import org.example.playus.domain.employee.Employee;
 import org.example.playus.domain.employee.EmployeeRepositoryMongo;
@@ -35,7 +37,7 @@ public class SignupService {
     @Value("${google.spreadsheet.id}")
     private String spreadsheetId;
 
-    private final String range = "시트10!B3:V";
+    private final String range = "구성원정보!B10:V";
 
     private static final GoogleSheetsHelper googleSheetsHelper = new GoogleSheetsHelper();
 
@@ -72,6 +74,13 @@ public class SignupService {
         employee.setPersonalInfo(requestDto.getPersonalInfo());
         employee.setPoints(initializePoints());
 
+        // 기본 권한 설정
+        Admin admin = new Admin(Role.ROLE_USER);  // 기본적으로 일반 사용자로 설정
+        if ("사업기획팀".equalsIgnoreCase(requestDto.getPersonalInfo().getDepartment()) && requestDto.getPersonalInfo().getLevel().startsWith("B")) {
+            admin = new Admin(Role.ROLE_ADMIN);  // 특정 조건에 따라 관리자 권한 설정
+        }
+        employee.setAdmin(admin);
+
         try {
             employeeRepositoryMongo.save(employee);
         } catch (Exception e) {
@@ -81,7 +90,6 @@ public class SignupService {
         try {
             // Employee 객체를 스프레드시트 행으로 변환
             List<Object> row = convertEmployeeToSpreadsheetRow(employee);
-
             googleSheetsHelper.appendRow(spreadsheetId, range, row);
         } catch (Exception e) {
             throw new RuntimeException("Failed to append data to Google Sheets: " + e.getMessage());
