@@ -1,16 +1,19 @@
 package org.example.playus.domain.sheet;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.ValueRange;
+import com.google.auth.http.HttpCredentialsAdapter;
+import com.google.auth.oauth2.GoogleCredentials;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.example.playus.domain.employeeExp.EmployeeExp;
-import org.example.playus.domain.employeeExp.EmployeeExpRepository;
 import org.example.playus.domain.board.Board;
 import org.example.playus.domain.board.BoardRepositoryMongo;
 import org.example.playus.domain.employee.Employee;
 import org.example.playus.domain.employee.EmployeeRepositoryMongo;
+import org.example.playus.domain.employeeExp.EmployeeExp;
+import org.example.playus.domain.employeeExp.EmployeeExpRepository;
 import org.example.playus.domain.evaluation.Evaluation;
 import org.example.playus.domain.evaluation.EvaluationRepository;
 import org.example.playus.domain.level.Level;
@@ -27,8 +30,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +40,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GoogleSheetService {
     private static final String APPLICATION_NAME = "Google Sheets API Example";
-    private static final String CREDENTIALS_FILE_PATH = "src/main/resources/googleSheet/google.json"; // 서비스 계정 키 경로
+    private static final String CREDENTIALS_FILE_PATH = "googleSheet/google.json"; //docker 에서 서비스 계정 키경로
 
     private static final GoogleSheetsHelper googleSheetsHelper = new GoogleSheetsHelper();
     private static final Logger log = LoggerFactory.getLogger(GoogleSheetService.class);
@@ -55,16 +58,19 @@ public class GoogleSheetService {
     // TODO : Google Sheets API를 Service layer에서 분리해야 함
     public List<Object> getSheetData(String spreadsheetId, String range) throws IOException, GeneralSecurityException {
         try {
-            // GoogleCredential 생성
-            GoogleCredential credential = GoogleCredential
-                    .fromStream(new FileInputStream(CREDENTIALS_FILE_PATH))
+            // GoogleCredential 생성 (InputStream을 통해 classpath 리소스 불러오기)
+            InputStream resourceStream = getClass().getClassLoader().getResourceAsStream(CREDENTIALS_FILE_PATH);
+            if (resourceStream == null) {
+                throw new IllegalArgumentException("Credential file not found in classpath: " + CREDENTIALS_FILE_PATH);
+            }
+            GoogleCredentials credentials = GoogleCredentials.fromStream(resourceStream)
                     .createScoped(List.of("https://www.googleapis.com/auth/spreadsheets"));
 
             // Sheets API 클라이언트 생성
             Sheets sheetsService = new Sheets.Builder(
-                    credential.getTransport(),
-                    credential.getJsonFactory(),
-                    credential
+                    GoogleNetHttpTransport.newTrustedTransport(),
+                    GsonFactory.getDefaultInstance(),
+                    new HttpCredentialsAdapter(credentials)
             )
                     .setApplicationName(APPLICATION_NAME)
                     .build();
@@ -73,7 +79,6 @@ public class GoogleSheetService {
             ValueRange response = sheetsService.spreadsheets().values()
                     .get(spreadsheetId, range)
                     .execute();
-
             // 응답 값 로그
             log.info("Google Sheets API Response: {}", response.getValues());
 
