@@ -9,11 +9,13 @@ import java.util.Collection;
 import java.util.List;
 
 public class UserDetailsImpl implements UserDetails {
+    private final Employee employee;
     private final String username;
     private final String password;
     private final Collection<? extends GrantedAuthority> authorities;
 
     public UserDetailsImpl(Employee employee) {
+        this.employee = employee;
         this.username = employee.getAccount().getUsername();
         this.password = employee.getAccount().getDefaultPassword();  // 기본 비밀번호 사용
 
@@ -65,5 +67,10 @@ public class UserDetailsImpl implements UserDetails {
                 .map(GrantedAuthority::getAuthority)
                 .findFirst()
                 .orElse("ROLE_USER");  // 기본 권한
+    }
+
+
+    public Employee getEmployee() {
+        return employee;  // 사용자 정보 반환
     }
 }
