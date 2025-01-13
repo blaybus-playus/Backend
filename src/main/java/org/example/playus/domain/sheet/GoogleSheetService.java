@@ -87,16 +87,18 @@ public class GoogleSheetService {
 
 
     @Transactional
-    public void syncAll(String spreadSheetId, String employeeRange, String groupQuestRange, String leaderQuestRange, String boardRANGE, String projectRANGE, String evaluationRange, String groupEmployeeExpRange) {
+    public void syncAll(String spreadSheetId, String employeeRange, String groupQuestRange, String leaderQuestRange, String boardRANGE,
+                        String projectRANGE, String evaluationRange, String groupEmployeeExpRange, String levelExpRange) {
         try {
             syncEmployeeData(spreadSheetId, employeeRange);
             syncGroupQuestData(spreadSheetId, groupQuestRange);
             syncLeaderQuestData(spreadSheetId, leaderQuestRange);
             syncLeaderQuestExp(spreadSheetId, leaderQuestRange);
-            //syncBoard(spreadSheetId, boardRANGE);
+            syncBoard(spreadSheetId, boardRANGE);
             syncProject(spreadSheetId, projectRANGE);
             syncEvaluation(spreadSheetId, evaluationRange);
             syncGroupEmployeeExp(spreadSheetId, groupEmployeeExpRange);
+            syncLevelExp(spreadSheetId, levelExpRange);
 
         } catch (Exception e) {
             log.error("Google Sheets 동기화 중 오류 발생: ", e);

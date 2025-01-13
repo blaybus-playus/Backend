@@ -49,7 +49,8 @@ public class GoogleSheetController {
     @Operation(summary = "전체 데이터 동기화", description = "모든 데이터를 동기화")
     public ResponseEntity<String> syncAllData() {
         try {
-            googleSheetService.syncAll(spreadSheetId, EmployeeRANGE, GroupQuestRANGE, LeaderQuestRANGE, BoardRANGE, ProjectRANGE, EvaluationRange, GroupEmployeeExpRange);
+            googleSheetService.syncAll(spreadSheetId, EmployeeRANGE, GroupQuestRANGE, LeaderQuestRANGE, BoardRANGE,
+                    ProjectRANGE, EvaluationRange, GroupEmployeeExpRange, LevelExpRange);
             return ResponseEntity.ok("전체 데이터 동기화 완료");
         } catch (Exception e) {
             e.printStackTrace();
