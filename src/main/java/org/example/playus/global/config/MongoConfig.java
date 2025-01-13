@@ -21,6 +21,7 @@ import java.util.TimeZone;
         "org.example.playus.domain.evaluation",
         "org.example.playus.domain.employeeExp",
         "org.example.playus.domain.level",
+        "org.example.playus.domain.admin"
 })
 @EnableMongoAuditing
 public class MongoConfig {

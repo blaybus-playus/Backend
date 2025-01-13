@@ -2,6 +2,7 @@ package org.example.playus.domain.sheet;
 
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.*;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
@@ -10,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,8 +21,20 @@ import java.util.List;
 public class GoogleSheetsHelper {
 
     private Sheets getSheetsService() throws IOException, GeneralSecurityException {
-        GoogleCredentials credentials = GoogleCredentials.fromStream(new FileInputStream("src/main/resources/googleSheet/google.json"))
-                .createScoped(Collections.singletonList("https://www.googleapis.com/auth/spreadsheets"));
+        GoogleCredentials credentials;
+
+        // Docker 환경 및 JAR 실행 시 classpath 기반으로 리소스를 가져오기
+        InputStream resourceStream = getClass().getClassLoader().getResourceAsStream("googleSheet/google.json");
+        if (resourceStream != null) {
+            credentials = GoogleCredentials.fromStream(resourceStream)
+                    .createScoped(Collections.singletonList(SheetsScopes.SPREADSHEETS));
+        } else {
+            // 로컬 환경에서는 FileInputStream으로 파일 시스템 경로를 사용
+            System.out.println("Classpath 리소스를 찾을 수 없어 로컬 파일 시스템 경로 사용");
+            credentials = GoogleCredentials.fromStream(new FileInputStream("src/main/resources/googleSheet/google.json"))
+                    .createScoped(Collections.singletonList(SheetsScopes.SPREADSHEETS));
+        }
+
         return new Sheets.Builder(
                 GoogleNetHttpTransport.newTrustedTransport(),
                 GsonFactory.getDefaultInstance(),

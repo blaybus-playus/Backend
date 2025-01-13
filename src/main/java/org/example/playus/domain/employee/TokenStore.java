@@ -31,5 +31,4 @@ public class TokenStore {
         return (this.accessToken == null || this.accessToken.isBlank()) &&
                 (this.refreshToken == null || this.refreshToken.isBlank());
     }
-
 }

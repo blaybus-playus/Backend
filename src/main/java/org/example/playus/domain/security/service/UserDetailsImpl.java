@@ -16,7 +16,13 @@ public class UserDetailsImpl implements UserDetails {
     public UserDetailsImpl(Employee employee) {
         this.username = employee.getAccount().getUsername();
         this.password = employee.getAccount().getDefaultPassword();  // 기본 비밀번호 사용
-        this.authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));  // 기본 권한
+
+        // Admin 필드에 따라 ROLE 설정
+        String role = (employee.getAdmin() != null && employee.getAdmin().getRole() != null)
+                ? employee.getAdmin().getRole().name()  // ROLE_ADMIN 또는 ROLE_USER 등
+                : "ROLE_USER";  // 기본 권한 설정
+
+        this.authorities = List.of(new SimpleGrantedAuthority(role));  // 권한 설정
     }
 
     @Override
@@ -52,5 +58,12 @@ public class UserDetailsImpl implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;  // 계정 활성화 여부 (true: 활성화)
+    }
+
+    public String getRole() {
+        return authorities.stream()
+                .map(GrantedAuthority::getAuthority)
+                .findFirst()
+                .orElse("ROLE_USER");  // 기본 권한
     }
 }

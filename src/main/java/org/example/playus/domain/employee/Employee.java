@@ -1,6 +1,7 @@
 package org.example.playus.domain.employee;
 
 import lombok.Getter;
+import org.example.playus.domain.admin.Admin;
 import org.example.playus.global.Timestamped;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -20,6 +21,7 @@ public class Employee extends Timestamped {
     private Map<String, Integer> points; // 연도별 포인트 데이터를 Map으로 저장
     private TokenStore tokenStore;
 
+    private Admin admin;
 
     public void setEmployeeId(String employeeId) {
         this.employeeId = employeeId;
@@ -42,5 +44,8 @@ public class Employee extends Timestamped {
     }
 
     public void setTokenStore(TokenStore tokenStore) {this.tokenStore = tokenStore;}
+
+    public void setAdmin(Admin admin) {this.admin = admin;}
+
 }
 

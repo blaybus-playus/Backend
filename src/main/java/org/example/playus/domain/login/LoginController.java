@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-@Tag(name ="Longin", description = "LonginController APIs")
+@Tag(name ="Auth")
 public class LoginController {
     private final LoginService loginService;
 

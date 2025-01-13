@@ -13,7 +13,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/google")
 @RequiredArgsConstructor
-@Tag(name = "GoogleSheet", description = "SheetController APIs")
+@Tag(name = "GoogleSheet")
 public class GoogleSheetController {
 
     private final GoogleSheetService googleSheetService;
@@ -33,7 +33,7 @@ public class GoogleSheetController {
 
     // 데이터 조회
     @GetMapping("/read")
-    @Operation(summary = "sheet read", description = "데이터 조회하는 기능")
+    @Operation(summary = "시트 읽기", description = "데이터 조회하는 기능")
     public ResponseEntity<List<Object>> readFromSheet() {
         try {
             List<Object> data = googleSheetService.getSheetData(spreadSheetId, RANGE);

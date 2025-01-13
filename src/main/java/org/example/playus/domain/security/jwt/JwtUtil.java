@@ -5,6 +5,7 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.playus.domain.admin.Role;
 import org.example.playus.global.exception.CustomException;
 import org.example.playus.global.exception.ErrorCode;
 import org.springframework.stereotype.Component;
@@ -34,10 +35,14 @@ public class JwtUtil {
         key = Keys.hmacShaKeyFor(Base64.getDecoder().decode(secretKey));
     }
 
-    public static String createToken(String username, Long expiresIn) {
+    public static String createToken(String username, Role role, Long expiresIn) {
         Date date = new Date(System.currentTimeMillis() + expiresIn);
+
+        Claims claims = Jwts.claims().setSubject(username);
+        claims.put("role", role.getRole());  // 권한 추가 (예: ROLE_ADMIN)
+
         return BEARER_PREFIX + Jwts.builder()
-                .setSubject(username)
+                .setClaims(claims)
                 .setExpiration(date)
                 .setIssuedAt(new Date())
                 .signWith(key, SignatureAlgorithm.HS256)
