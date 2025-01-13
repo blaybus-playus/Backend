@@ -35,12 +35,6 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String requestURI = request.getRequestURI();
-        if (requestURI.equals("/auth/login")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
         String token = JwtUtil.getJwtTokenFromHeader(request);
 
         if (StringUtils.hasText(token)) {
@@ -78,8 +72,9 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         // 기존 권한을 SimpleGrantedAuthority로 변환 후 새로운 권한 추가
         List<SimpleGrantedAuthority> updatedAuthorities = userDetailsImpl.getAuthorities().stream()
                 .map(authority -> new SimpleGrantedAuthority(authority.getAuthority()))
+                .distinct()
                 .collect(Collectors.toList());  // 기존 권한을 SimpleGrantedAuthority 리스트로 변환
-        updatedAuthorities.add(new SimpleGrantedAuthority(role));  // JWT에서 가져온 role 추가
+
 
         log.info("인증된 사용자: {}, 설정된 권한: {}", userDetailsImpl.getUsername(), updatedAuthorities);
 

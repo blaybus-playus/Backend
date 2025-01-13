@@ -22,7 +22,7 @@ public class GoogleSheetController {
     private String spreadSheetId; // 스프레드시트 ID
 
     private static final String RANGE = "요구사항!B2:D2"; // 읽을 셀 범위
-    private static final String EmployeeRANGE = "구성원 정보!B9:V"; // 구성원 정보
+    private static final String EmployeeRANGE = "구성원정보!B9:V"; // 구성원 정보
     private static final String GroupQuestRANGE = "직무별 퀘스트"; // 그룹 퀘스트 범위
     private static final String LeaderQuestRANGE = "리더부여 퀘스트"; // 리더 퀘스트 범위
     private static final String BoardRANGE = "게시판!B6:D"; // 게시판 범위

@@ -48,32 +48,22 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())  // CSRF 비활성화
+                .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration config = new CorsConfiguration();
-                    config.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:8080", "http://34.122.87.147", "http://35.184.127.151"));  // 허용할 도메인
+                    config.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:8080","http://34.122.87.147", "http://35.184.127.151"));
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     config.setAllowedHeaders(List.of("*"));
-                    config.setAllowCredentials(true);  // 인증정보 포함 허용 여부
+                    config.setAllowCredentials(true);
                     return config;
                 }))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Swagger 및 actuator 접근 허용
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
-                        .requestMatchers("/actuator/**").permitAll()
-                        // 로그인 및 회원가입 관련 요청 허용
-                        .requestMatchers("/auth/**").permitAll()  // "/auth/**" 모든 요청 허용 (컨트롤러에서 권한 처리)
-                        // 게시판 관련 요청 허용
-                        .requestMatchers("/board/**").permitAll()  // CRUD API 모두 허용 (컨트롤러에서 권한 처리)
-                        // 관리자 관련 API 허용 (컨트롤러에서 권한 처리)
-                        .requestMatchers("/admin/**").permitAll()
-                        // 나머지 모든 요청은 인증 필요
+                        .requestMatchers("/auth/**", "/google/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                // 필터 체인 등록
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(jwtAuthorizationFilter(), JwtAuthenticationFilter.class);  // Authorization 필터 등록
+                .addFilterBefore(jwtAuthorizationFilter(), JwtAuthenticationFilter.class);
 
         return http.build();
     }
