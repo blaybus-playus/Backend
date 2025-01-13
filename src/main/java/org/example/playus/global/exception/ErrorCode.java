@@ -37,7 +37,10 @@ public enum ErrorCode {
     //SHEET
     SHEET_NOT_FOUND(HttpStatus.NOT_FOUND,"Google Sheets에서 해당 ID의 게시글을 찾을 수 없습니다." ),
     INVALID_TYPE(HttpStatus.UNAUTHORIZED,"잘못된 검색 타입입니다." ),
-    SEARCH_NOT_FOUND(HttpStatus.NOT_FOUND,"검색 결과가 없습니다." );
+    SEARCH_NOT_FOUND(HttpStatus.NOT_FOUND,"검색 결과가 없습니다." ),
+
+    // LEVEL
+    LEVEL_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 레벨 그룹입니다.");
     private final HttpStatus status;
     private final String message;
 }
