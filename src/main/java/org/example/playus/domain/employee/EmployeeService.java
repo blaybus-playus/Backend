@@ -79,4 +79,19 @@ public class EmployeeService {
                 .limitExp(employeeExp.getMaxExp() / 2)
                 .build();
     }
+
+    public EmployeeExpDetailResponseDto getEmployeeExpByYear(int employeeId, int year) {
+        EmployeeExp employeeExp = employeeExpRepository.findByEmployeeIdAndYear(employeeId, year)
+                .orElseThrow(() -> new CustomException(ErrorCode.EMPLOYEE_NOT_FOUND));
+
+        return EmployeeExpDetailResponseDto.builder()
+                .name(employeeExp.getName())
+                .employeeId(String.valueOf(employeeExp.getEmployeeId()))
+                .fistHalfExp(employeeExp.getExpForYear().getFirstHalfEvaluationExp())
+                .secondHalfExp(employeeExp.getExpForYear().getSecondHalfEvaluationExp())
+                .groupQuestExp(employeeExp.getExpForYear().getGroupQuestExp())
+                .leaderQuestExp(employeeExp.getExpForYear().getLeaderQuestExp())
+                .projectExp(employeeExp.getExpForYear().getProjectExp())
+                .build();
+    }
 }
