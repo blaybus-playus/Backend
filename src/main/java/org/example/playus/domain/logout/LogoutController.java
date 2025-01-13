@@ -15,13 +15,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-@Tag(name = "Logout", description = "LogoutController APIs")
+@Tag(name = "Auth")
 public class LogoutController {
 
     private final LogoutService logoutService;
 
-    @Operation(summary = "logiut", description = "로그아웃 기능")
     @PostMapping("/logout")
+    @Operation(summary = "로그아웃", description = "로그아웃 기능")
     public ResponseEntity<CommonResponse> logout(HttpServletRequest request) {
         String token = JwtUtil.getJwtTokenFromHeader(request);  // 헤더에서 토큰 추출
         String username = JwtUtil.getUserInfoFromToken(token).getSubject();  // 토큰에서 username 추출
