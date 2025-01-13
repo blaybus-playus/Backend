@@ -50,11 +50,12 @@ public class JwtUtil {
     }
 
     public static String getJwtTokenFromHeader(HttpServletRequest request) {
-        String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
-            return bearerToken.substring(7).trim();  // "Bearer " 제거 후 공백 제거
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+            // Authorization 헤더가 없을 경우 null 반환
+            return null;
         }
-        throw new CustomException(ErrorCode.FALSE_TOKEN);
+        return bearerToken.substring(7);  // "Bearer " 제거 후 반환
     }
 
     public static void validateToken(String token) {
