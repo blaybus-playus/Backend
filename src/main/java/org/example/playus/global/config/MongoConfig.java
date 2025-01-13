@@ -2,11 +2,15 @@ package org.example.playus.global.config;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
+
+import java.util.TimeZone;
 
 @Configuration
 @EnableMongoRepositories(basePackages = {
@@ -16,9 +20,15 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
         "org.example.playus.domain.project",
         "org.example.playus.domain.evaluation",
         "org.example.playus.domain.employeeExp",
-        "org.example.playus.domain.level"
+        "org.example.playus.domain.level",
 })
+@EnableMongoAuditing
 public class MongoConfig {
+
+    @PostConstruct
+    public void setTimeZone() {
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Seoul"));
+    }
 
     @Value("${spring.data.mongodb.uri}")
     private String uri;

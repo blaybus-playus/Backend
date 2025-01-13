@@ -3,11 +3,12 @@ package org.example.playus.domain.quest.leaderQuest;
 import jakarta.persistence.Id;
 import lombok.Builder;
 import lombok.Getter;
+import org.example.playus.global.Timestamped;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Getter
 @Document(collection = "leaderQuest")
-public class LeaderQuest {
+public class LeaderQuest extends Timestamped {
     @Id
     private String id; // 리더 퀘스트 ID
     private String affiliation; // 소속
