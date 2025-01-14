@@ -310,7 +310,6 @@ public class GoogleSheetsConvert {
 
         Map<String, Integer> evaluationHeaderIndexMap = createHeaderIndexMap(extractHeaders(evaluationData));
 
-        List<PersonalEvaluation> personalEvaluations = new ArrayList<>();
         for (int i = 1; i < evaluationData.size(); i++) {
             List<Object> evaluationRow = evaluationData.get(i);
 
@@ -324,14 +323,12 @@ public class GoogleSheetsConvert {
                     .note(evaluationRow.get(evaluationHeaderIndexMap.get("비고")) == null ? "-" : evaluationRow.get(evaluationHeaderIndexMap.get("비고")).toString())
                     .build();
 
-            personalEvaluations.add(personalEvaluation);
+            Evaluation evaluation = Evaluation.builder()
+                    .term(term)
+                    .personalEvaluation(personalEvaluation)
+                    .build();
+            evaluations.add(evaluation);
         }
-        Evaluation evaluation = Evaluation.builder()
-                .term(term)
-                .personalEvaluation(personalEvaluations)
-                .build();
-        evaluations.add(evaluation);
-
         return evaluations;
     }
 

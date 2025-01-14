@@ -8,9 +8,6 @@ import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.example.playus.domain.employee.Employee;
-import org.example.playus.domain.employeeExp.EmployeeExp;
-import org.example.playus.domain.employeeExp.EmployeeExpRepository;
 import org.example.playus.domain.board.Board;
 import org.example.playus.domain.board.BoardRepositoryMongo;
 import org.example.playus.domain.employee.Employee;
@@ -35,10 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -332,35 +326,13 @@ public class GoogleSheetService {
     @Transactional
     public void syncEvaluation(String spreadSheetId, String evaluationRANGE) {
         try {
-            // 상반기, 하반기 평가 데이터 읽기
-            String firstHalfRange = evaluationRANGE + "!B7";
-            String secondHalfRange = evaluationRANGE + "!H7";
-
-            String firstHalf = googleSheetsHelper.readCell(spreadSheetId, firstHalfRange);
-            String secondHalf = googleSheetsHelper.readCell(spreadSheetId, secondHalfRange);
-
-            // 평가 데이터 읽기
-            String firstHalfEvaluationDataRange = evaluationRANGE + "!B9:F";
-            String secondHalfEvaluationDataRange = evaluationRANGE + "!H9:L";
-
-            List<List<Object>> firstHalfEvaluationData = googleSheetsHelper.readSheetData(spreadSheetId, firstHalfEvaluationDataRange);
-            List<List<Object>> secondHalfEvaluationData = googleSheetsHelper.readSheetData(spreadSheetId, secondHalfEvaluationDataRange);
-
-            List<Evaluation> firstHalfEvaluationList = GoogleSheetsConvert.convertToEvaluation(firstHalf, firstHalfEvaluationData);
-            List<Evaluation> secondHalfEvaluationList = GoogleSheetsConvert.convertToEvaluation(secondHalf, secondHalfEvaluationData);
-
-            // 기존 데이터 삭제
-            evaluationRepository.deleteAll();
-
-            // 새로운 데이터 저장
-            evaluationRepository.saveAll(firstHalfEvaluationList);
-            evaluationRepository.saveAll(secondHalfEvaluationList);
-
+            // 평가 데이터 읽기 및 저장을 처리하는 메서드 호출
+            processEvaluationData(spreadSheetId, evaluationRANGE, "!B7", "!B9:F");
+            processEvaluationData(spreadSheetId, evaluationRANGE, "!H7", "!H9:L");
         } catch (Exception e) {
             log.error("Google Sheets 동기화 중 오류 발생: ", e);
             throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
         }
-
     }
 
     @Transactional
@@ -447,5 +419,34 @@ public class GoogleSheetService {
 
         List<GroupQuest> groupQuestList = GoogleSheetsConvert.convertToGroupQuest(groupData, expPerWeekData, scoreData);
         return groupQuestList;
+    }
+
+    private void processEvaluationData(String spreadSheetId, String evaluationRANGE, String termCell, String dataRange) throws Exception {
+        // 평가 기간 및 데이터 읽기
+        String termRange = evaluationRANGE + termCell;
+        String evaluationDataRange = evaluationRANGE + dataRange;
+
+        String term = googleSheetsHelper.readCell(spreadSheetId, termRange);
+        List<List<Object>> evaluationData = googleSheetsHelper.readSheetData(spreadSheetId, evaluationDataRange);
+
+        // 평가 데이터 변환
+        List<Evaluation> evaluationList = GoogleSheetsConvert.convertToEvaluation(term, evaluationData);
+        List<Evaluation> existingEvaluationList = evaluationRepository.findAllByTerm(term);
+
+        // 중복 필터링
+        List<Evaluation> evaluationToSave = evaluationList.stream()
+                .filter(newEvaluation -> existingEvaluationList.stream()
+                        .noneMatch(existingEvaluation ->
+                                existingEvaluation.getPersonalEvaluation().getEmployeeId()
+                                        == (newEvaluation.getPersonalEvaluation().getEmployeeId())))
+                .toList();
+
+        // 저장
+        if (!evaluationToSave.isEmpty()) {
+            evaluationRepository.saveAll(evaluationToSave);
+            log.info("{} 평가 데이터 저장 완료: {}건", term, evaluationToSave.size());
+        } else {
+            log.info("{} 평가 데이터 저장할 새로운 데이터가 없습니다.", term);
+        }
     }
 }

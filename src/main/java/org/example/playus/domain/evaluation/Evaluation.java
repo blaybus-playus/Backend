@@ -13,11 +13,11 @@ import java.util.List;
 public class Evaluation extends Timestamped {
     private String term;  // 평가 기간
 
-    private List<PersonalEvaluation> personalEvaluation; // 개인 평가
+    private PersonalEvaluation personalEvaluation; // 개인 평가
 
     @Builder
-    public Evaluation(String term, List<PersonalEvaluation> personalEvaluation) {
+    public Evaluation(String term, PersonalEvaluation personalEvaluation) {
         this.term = term;
-        this.personalEvaluation = personalEvaluation != null ? personalEvaluation : new ArrayList<>();
+        this.personalEvaluation = personalEvaluation;
     }
 }
