@@ -83,21 +83,21 @@ public class BoardService {
     }
 
     @Transactional(readOnly = true)
-    public List<BoardResponseDto> searchBoard(String keyword, String searchType) {
+    public List<BoardResponseDto> searchBoard(String jobGroup) {
+        log.info("직군 검색 시작 - jobGroup: {}", jobGroup);
+
         List<Board> boards;
-        switch (searchType.toLowerCase()) {
-            case "title":
-                boards = boardRepository.findByTitleContainingIgnoreCase(keyword);
-                break;
-            case "content":
-                boards = boardRepository.findByContentContainingIgnoreCase(keyword);
-                break;
-            case "title+content":
-                boards = boardRepository.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(keyword, keyword);
-                break;
-            default:
-                throw new CustomException(ErrorCode.INVALID_TYPE);
+
+        // jobGroup이 직군 코드인지 확인하여 JobGroup enum으로 변환
+        JobGroup jobGroupEnum;
+        try {
+            jobGroupEnum = JobGroup.valueOf(jobGroup.toUpperCase());  // Enum 변환
+        } catch (IllegalArgumentException e) {
+            throw new CustomException(ErrorCode.INVALID_GROUP_TYPE);
         }
+
+        // 직군 코드에 해당하는 게시글 조회
+        boards = boardRepository.findByJobGroup(jobGroupEnum);
 
         if (boards.isEmpty()) {
             throw new CustomException(ErrorCode.SEARCH_NOT_FOUND);
@@ -108,6 +108,7 @@ public class BoardService {
                         .id(board.getId())
                         .title(board.getTitle())
                         .content(board.getContent())
+                        .jobGroup(board.getJobGroup())
                         .message("게시글 조회 성공")
                         .build())
                 .toList();
