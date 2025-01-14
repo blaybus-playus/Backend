@@ -298,15 +298,31 @@ public class GoogleSheetService {
     public void syncProject(String spreadSheetId, String projectRANGE) {
         try {
             List<List<Object>> projectData = googleSheetsHelper.readSheetData(spreadSheetId, projectRANGE);
-            List<Project> projectList = GoogleSheetsConvert.convertToProject(projectData);
+            List<Project> newProjects = GoogleSheetsConvert.convertToProject(projectData);
 
-            // 기존 데이터 삭제
-            projectRepository.deleteAll();
-            log.info("기존 Project 데이터 삭제 완료.");
+            // 기존 데이터 조회
+            List<Project> existingProjects = projectRepository.findAll();
+
+            // 중복 데이터 필터링 (새로운 데이터만 선택)
+            List<Project> projectsToSave = newProjects.stream()
+                    .filter(newProject -> existingProjects.stream()
+                            .noneMatch(existingProject ->
+                                    existingProject.getMonth() == newProject.getMonth() &&
+                                            existingProject.getDay() == newProject.getDay() &&
+                                            existingProject.getEmployeeId() == newProject.getEmployeeId() &&
+                                            existingProject.getEmployeeName().equals(newProject.getEmployeeName()) &&
+                                            existingProject.getProjectTitle().equals(newProject.getProjectTitle()) &&
+                                            existingProject.getScore() == newProject.getScore()
+                            )) // 중복 확인
+                    .toList();
 
             // 새로운 데이터 저장
-            projectRepository.saveAll(projectList);
-            log.info("새로운 Project 데이터 저장 완료.");
+            if (!projectsToSave.isEmpty()) {
+                projectRepository.saveAll(projectsToSave);
+                log.info("새로운 Project 데이터 저장 완료: {}건", projectsToSave.size());
+            } else {
+                log.info("추가 저장할 새로운 Project 데이터가 없습니다.");
+            }
         } catch (Exception e) {
             log.error("Google Sheets 동기화 중 오류 발생: ", e);
             throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
