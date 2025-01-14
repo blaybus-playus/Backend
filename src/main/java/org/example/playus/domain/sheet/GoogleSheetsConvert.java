@@ -1,5 +1,6 @@
 package org.example.playus.domain.sheet;
 
+import org.example.playus.domain.board.JobGroup;
 import org.example.playus.domain.employeeExp.EmployeeExp;
 import org.example.playus.domain.employeeExp.ExpForYear;
 import org.example.playus.domain.employee.Account;
@@ -240,6 +241,7 @@ public class GoogleSheetsConvert {
         int numberIndex = headerIndexMap.get("번호");
         int titleIndex = headerIndexMap.get("제목");
         int contentIndex = headerIndexMap.get("글");
+        int jobGroupIndex = headerIndexMap.containsKey("직군") ? headerIndexMap.get("직군") : -1;  // 직군 필드 인덱스
 
         for (int i = 1; i < sheetData.size(); i++) {
             List<Object> row = sheetData.get(i);
@@ -256,10 +258,23 @@ public class GoogleSheetsConvert {
                 log.warn("제목 또는 내용이 비어 있습니다. (행 번호: {}), 데이터: {}", i + 1, row);
             }
 
+            // 직군 설정 (존재하지 않으면 기본값으로 "A")
+            JobGroup jobGroup = JobGroup.A;  // 기본값
+            if (jobGroupIndex != -1 && row.size() > jobGroupIndex) {
+                String jobGroupValue = row.get(jobGroupIndex).toString().trim();
+                try {
+                    jobGroup = JobGroup.valueOf(jobGroupValue.toUpperCase());  // Enum 변환
+                } catch (IllegalArgumentException e) {
+                    log.warn("유효하지 않은 직군 코드: {}, 기본값 T로 설정 (행 번호: {})", jobGroupValue, i + 1);
+                }
+            }
+
+            // Board 객체 생성 및 설정
             Board board = new Board();
             board.setId(id);
             board.setTitle(title);
             board.setContent(content);
+            board.setJobGroup(jobGroup);  // 직군 설정 추가
             boards.add(board);
         }
 

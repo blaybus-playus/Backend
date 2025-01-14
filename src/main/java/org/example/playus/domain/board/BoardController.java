@@ -2,6 +2,7 @@ package org.example.playus.domain.board;
 
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.playus.domain.board.dto.BoardRequestDto;
 import org.example.playus.domain.board.dto.BoardResponseDto;
 import org.example.playus.domain.security.service.UserDetailsImpl;
@@ -42,19 +43,22 @@ public class BoardController {
     }
 
     @GetMapping("/read/search")
-    @Operation(summary = "분류에 따른 게시글 조회", description = "제목, 내용, 제목+내용 검색 또는 전체 게시글 조회")
-    public ResponseEntity<CommonResponse<List<BoardResponseDto>>> searchBoard(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String searchType
+    @Operation(summary = "직군별 게시글 조회", description = "직군 코드에 따라 게시글을 조회하거나 전체 게시글을 조회")
+    public ResponseEntity<CommonResponse<List<BoardResponseDto>>> searchBoardByJobGroup(
+            @RequestParam(required = false) JobGroup jobGroup
     ) {
         List<BoardResponseDto> responseDtos;
-        if (keyword == null || keyword.isBlank()) {
+
+        if (jobGroup == null || jobGroup == JobGroup.A) {  // null 또는 ALL일 경우 전체 조회
             responseDtos = boardService.readAllBoards();
         } else {
-            responseDtos = boardService.searchBoard(keyword, searchType);
+            responseDtos = boardService.searchBoard(jobGroup);  // 특정 직군 조회
         }
+
         return ResponseEntity.ok(new CommonResponse<>("게시글 조회 성공", HttpStatus.OK.value(), responseDtos));
     }
+
+
 
     @PutMapping("/update/{id}")
     @Operation(summary = "게시글 수정", description = "게시글 수정")

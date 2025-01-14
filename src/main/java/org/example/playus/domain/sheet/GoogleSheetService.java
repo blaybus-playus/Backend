@@ -246,14 +246,15 @@ public class GoogleSheetService {
 
             // Step 2: MongoDB에서 게시글을 가져와 Google Sheets 업데이트
             List<List<Object>> updatedPostData = new ArrayList<>();
-            updatedPostData.add(List.of("번호", "제목", "글"));  // 헤더 추가
+            updatedPostData.add(List.of("번호", "제목", "글", "직군"));  // 헤더 추가
 
             for (Board board : boardsFromSheet) {
                 if (board.getTitle() != null && !board.getTitle().isEmpty()) {
                     updatedPostData.add(List.of(
                             board.getId(),  // MongoDB의 _id를 사용
                             board.getTitle(),
-                            board.getContent() != null ? board.getContent() : ""
+                            board.getContent() != null ? board.getContent() : "" ,
+                            board.getJobGroup() != null ? board.getJobGroup().name() : ""  // 직군 enum 값 추가
                     ));
                 }
             }

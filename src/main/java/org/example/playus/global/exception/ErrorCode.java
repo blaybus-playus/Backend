@@ -40,7 +40,8 @@ public enum ErrorCode {
     SEARCH_NOT_FOUND(HttpStatus.NOT_FOUND,"검색 결과가 없습니다." ),
 
     // LEVEL
-    LEVEL_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 레벨 그룹입니다.");
+    LEVEL_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 레벨 그룹입니다."),
+    INVALID_GROUP_TYPE(HttpStatus.FORBIDDEN,"존재하지 않는 직군입니다." );
     private final HttpStatus status;
     private final String message;
 }
