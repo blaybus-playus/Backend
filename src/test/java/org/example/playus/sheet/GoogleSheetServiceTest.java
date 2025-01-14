@@ -3,7 +3,7 @@ package org.example.playus.sheet;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.ValueRange;
-import org.example.playus.domain.employee.Employee;
+import org.example.playus.domain.employee.model.Employee;
 import org.example.playus.domain.employee.EmployeeRepositoryMongo;
 import org.example.playus.domain.sheet.GoogleSheetService;
 import org.example.playus.domain.sheet.GoogleSheetsHelper;

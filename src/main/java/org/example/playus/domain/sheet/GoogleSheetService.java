@@ -8,13 +8,11 @@ import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.example.playus.domain.employee.Employee;
-import org.example.playus.domain.employeeExp.EmployeeExp;
-import org.example.playus.domain.employeeExp.EmployeeExpRepository;
 import org.example.playus.domain.board.Board;
 import org.example.playus.domain.board.BoardRepositoryMongo;
-import org.example.playus.domain.employee.Employee;
+import org.example.playus.domain.employee.model.Employee;
 import org.example.playus.domain.employee.EmployeeRepositoryMongo;
+import org.example.playus.domain.employee.model.RecentExpDetail;
 import org.example.playus.domain.employeeExp.EmployeeExp;
 import org.example.playus.domain.employeeExp.EmployeeExpRepository;
 import org.example.playus.domain.evaluation.Evaluation;
@@ -23,9 +21,12 @@ import org.example.playus.domain.level.Level;
 import org.example.playus.domain.level.LevelRepository;
 import org.example.playus.domain.project.Project;
 import org.example.playus.domain.project.ProjectRepository;
+import org.example.playus.domain.quest.groupGuset.GroupExperience;
 import org.example.playus.domain.quest.groupGuset.GroupQuest;
 import org.example.playus.domain.quest.groupGuset.GroupQuestRepositoryMongo;
 import org.example.playus.domain.quest.leaderQuest.*;
+import org.example.playus.global.exception.CustomException;
+import org.example.playus.global.exception.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -34,10 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -82,12 +80,9 @@ public class GoogleSheetService {
             ValueRange response = sheetsService.spreadsheets().values()
                     .get(spreadsheetId, range)
                     .execute();
-            // 응답 값 로그
-            log.info("Google Sheets API Response: {}", response.getValues());
 
             return response.getValues() != null ? response.getValues().get(0) : List.of(); // 첫 번째 행 반환
         } catch (IOException e) {
-            log.error("Error accessing Google Sheets API: ", e); // 예외 발생 시 로그 남기기
             throw new RuntimeException("Error accessing Google Sheets API: " + e.getMessage());
         }
     }
@@ -108,7 +103,6 @@ public class GoogleSheetService {
             syncLevelExp(spreadSheetId, levelExpRange);
 
         } catch (Exception e) {
-            log.error("Google Sheets 동기화 중 오류 발생: ", e);
             throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
         }
     }
@@ -119,20 +113,25 @@ public class GoogleSheetService {
             List<List<Object>> sheetData = googleSheetsHelper.readSheetData(spreadsheetId, range);
             log.info("Sheet Data Read: {}", sheetData);
 
-            List<Employee> employees = GoogleSheetsConvert.convertToUsers(sheetData);
-            for (Employee employee : employees) {
-                System.out.println(employee);
-            }
+            List<Employee> newEmployees = GoogleSheetsConvert.convertToUsers(sheetData);
 
-            List<Employee> savedEmployees = employeeRepositoryMongo.saveAll(employees);
+            // 기존 데이터 조회
+            List<Employee> existingEmployees = employeeRepositoryMongo.findAll();
 
-            if (savedEmployees.size() == employees.size()) {
-                log.info("All users saved successfully.");
+            // 중복되지 않는 새로운 데이터 필터링
+            List<Employee> employeesToSave = newEmployees.stream()
+                    .filter(newEmployee -> existingEmployees.stream()
+                            .noneMatch(existingEmployee -> existingEmployee.getEmployeeId().equals(newEmployee.getEmployeeId())))
+                    .toList();
+
+            // 새로운 데이터 저장
+            if (!employeesToSave.isEmpty()) {
+                employeeRepositoryMongo.saveAll(employeesToSave);
             } else {
-                log.warn("Some users were not saved.");
+                log.info("추가 저장할 새로운 Employee 데이터가 없습니다.");
             }
+
         } catch (Exception e) {
-            log.error("Error while syncing Google Sheets to MongoDB: ", e); // 예외 발생 시 로그 남기기
             throw new RuntimeException("Error while syncing Google Sheets to MongoDB: " + e.getMessage());
         }
     }
@@ -141,30 +140,48 @@ public class GoogleSheetService {
     public void syncGroupQuestData(String spreadSheetId, String groupQuestRange) throws Exception {
 
         List<GroupQuest> newGroupQuests = moduleGroupQuestData(spreadSheetId, groupQuestRange);
+        //TODO : get(0)을 했을 경우 다른 값으로 저장 될 가능성을 배제하는 것이기 때문에 수정해야 할 필요가 있다.
+        List<GroupQuest> existingGroupQuests = groupQuestRepositoryMongo.findAllByAffiliationAndDepartment(
+                newGroupQuests.get(0).getAffiliation(), newGroupQuests.get(0).getDepartment());
 
+        String affiliation = newGroupQuests.get(0).getAffiliation();
+
+        // 새로운 데이터 업데이트 또는 추가
         for (GroupQuest newQuest : newGroupQuests) {
-            // 먼저 기존의 모든 중복 데이터 삭제
-            List<GroupQuest> duplicates = groupQuestRepositoryMongo.findAllByAffiliationAndDepartment(
-                    newQuest.getAffiliation(),
-                    newQuest.getDepartment()
-            );
+            boolean isUpdated = false;
+            for (GroupQuest existingQuest : existingGroupQuests) {
+                GroupExperience existingExp = existingQuest.getGroupExperiences();
+                GroupExperience newExp = newQuest.getGroupExperiences();
 
-            if (!duplicates.isEmpty()) {
-                // 가장 최근 데이터 하나만 남기고 나머지 삭제
-                GroupQuest latestQuest = duplicates.get(0);
-                duplicates.remove(0);
-                if (!duplicates.isEmpty()) {
-                    groupQuestRepositoryMongo.deleteAll(duplicates);
+                if (existingExp.getWeek() == newExp.getWeek()) {
+                    if (existingExp.isDifferent(newExp)) {
+
+                        existingExp.setExperience(newExp.getExperience());
+                        existingExp.setEtc(newExp.getEtc());
+
+                        groupQuestRepositoryMongo.save(existingQuest);
+
+                        RecentExpDetail recentExpDetail = RecentExpDetail.builder()
+                                .date(existingQuest.getModifiedAt())
+                                .questGroup("그룹 퀘스트")
+                                .questName("직무별 퀘스트")
+                                .score(existingQuest.getGroupExperiences().getExperience())
+                                .build();
+                        // 업데이트 되는 시점의 경험치를 recentExpDetails에 저장
+                        List<Employee> employees = employeeRepositoryMongo.findAllByPersonalInfo_Department(affiliation);
+                        for (Employee employee : employees) {
+                            List<RecentExpDetail> recentExpDetailList = employee.getRecentExpDetails();
+                            recentExpDetailList.add(recentExpDetail);
+                            employee.setRecentExpDetails(recentExpDetailList);
+                            employeeRepositoryMongo.save(employee);
+                        }
+                    }
+                    isUpdated = true;
+                    break;
                 }
-
-                // 최근 데이터의 경험치 정보 업데이트
-                latestQuest.setGroupExperiences(newQuest.getGroupExperiences());
-                groupQuestRepositoryMongo.save(latestQuest);
-                log.info("기존 GroupQuest 데이터 업데이트 완료: {}", latestQuest.getAffiliation());
-            } else {
-                // 새로운 데이터 저장
+            }
+            if (!isUpdated) {
                 groupQuestRepositoryMongo.save(newQuest);
-                log.info("새로운 GroupQuest 데이터 저장 완료: {}", newQuest.getAffiliation());
             }
         }
     }
@@ -185,15 +202,12 @@ public class GoogleSheetService {
             List<LeaderQuest> existingLeaderQuests = leaderQuestRepository.findAllByAffiliation(affiliation);
             if (!existingLeaderQuests.isEmpty()) {
                 leaderQuestRepository.deleteAll(existingLeaderQuests);
-                log.info("기존 LeaderQuest 데이터 삭제 완료: {}", affiliation);
             }
 
             // 새로운 데이터 저장
             leaderQuestRepository.saveAll(newLeaderQuests);
-            log.info("새로운 LeaderQuest 데이터 저장 완료: {}", affiliation);
 
         } catch (Exception e) {
-            log.error("Google Sheets 동기화 중 오류 발생: ", e);
             throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
         }
     }
@@ -210,7 +224,6 @@ public class GoogleSheetService {
 
             // 기존 데이터 조회
             List<LeaderQuestExp> existingLeaderQuestExps = leaderQuestExpRepository.findAllByAffiliation(affiliation);
-
             // 새 데이터 업데이트 또는 추가
             for (LeaderQuestExp newExp : newLeaderQuestExpList) {
                 boolean isUpdated = false;
@@ -228,6 +241,21 @@ public class GoogleSheetService {
                             existingList.setScore(newList.getScore());
 
                             leaderQuestExpRepository.save(existingExp);
+
+                            Employee employee = employeeRepositoryMongo.findById(String.valueOf(existingList.getEmployeeId()))
+                                    .orElseThrow(() -> new CustomException(ErrorCode.EMPLOYEE_NOT_FOUND));
+
+                            RecentExpDetail recentExpDetail = RecentExpDetail.builder()
+                                    .date(existingExp.getModifiedAt())
+                                    .questGroup("리더 퀘스트")
+                                    .questName(existingList.getQuestName())
+                                    .score(existingList.getScore())
+                                    .build();
+                            List<RecentExpDetail> recentExpDetailList = employee.getRecentExpDetails();
+
+                            recentExpDetailList.add(recentExpDetail);
+                            employee.setRecentExpDetails(recentExpDetailList);
+                            employeeRepositoryMongo.save(employee);
                         }
 
                         isUpdated = true;
@@ -238,9 +266,7 @@ public class GoogleSheetService {
                     leaderQuestExpRepository.save(newExp);
                 }
             }
-            log.info("LeaderQuestExp 데이터 동기화 완료: {}", affiliation);
         } catch (Exception e) {
-            log.error("Google Sheets 동기화 중 오류 발생: ", e);
             throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
         }
     }
@@ -273,7 +299,7 @@ public class GoogleSheetService {
                     updatedPostData.add(List.of(
                             board.getId(),  // MongoDB의 _id를 사용
                             board.getTitle(),
-                            board.getContent() != null ? board.getContent() : "" ,
+                            board.getContent() != null ? board.getContent() : "",
                             board.getJobGroup() != null ? board.getJobGroup().name() : ""  // 직군 enum 값 추가
                     ));
                 }
@@ -281,10 +307,8 @@ public class GoogleSheetService {
 
             // 시트 업데이트
             googleSheetsHelper.updateSheetData(spreadsheetId, boardRange, updatedPostData);
-            log.info("MongoDB의 게시글 데이터를 Google Sheets에 업데이트 완료");
 
         } catch (Exception e) {
-            log.error("게시글 동기화 중 오류 발생: ", e);
             throw new RuntimeException("게시글 동기화 중 오류 발생: " + e.getMessage());
         }
     }
@@ -293,17 +317,46 @@ public class GoogleSheetService {
     public void syncProject(String spreadSheetId, String projectRANGE) {
         try {
             List<List<Object>> projectData = googleSheetsHelper.readSheetData(spreadSheetId, projectRANGE);
-            List<Project> projectList = GoogleSheetsConvert.convertToProject(projectData);
+            List<Project> newProjects = GoogleSheetsConvert.convertToProject(projectData);
 
-            // 기존 데이터 삭제
-            projectRepository.deleteAll();
-            log.info("기존 Project 데이터 삭제 완료.");
+            // 기존 데이터 조회
+            List<Project> existingProjects = projectRepository.findAll();
+
+            // 중복 데이터 필터링 (새로운 데이터만 선택)
+            List<Project> projectsToSave = newProjects.stream()
+                    .filter(newProject -> existingProjects.stream()
+                            .noneMatch(existingProject ->
+                                    existingProject.getMonth() == newProject.getMonth() &&
+                                            existingProject.getDay() == newProject.getDay() &&
+                                            existingProject.getEmployeeId() == newProject.getEmployeeId() &&
+                                            existingProject.getEmployeeName().equals(newProject.getEmployeeName()) &&
+                                            existingProject.getProjectTitle().equals(newProject.getProjectTitle()) &&
+                                            existingProject.getScore() == newProject.getScore()
+                            )) // 중복 확인
+                    .toList();
+
+            for(Project project : projectsToSave) {
+                Employee employee = employeeRepositoryMongo.findById(String.valueOf(project.getEmployeeId()))
+                        .orElseThrow(() -> new CustomException(ErrorCode.EMPLOYEE_NOT_FOUND));
+                List<RecentExpDetail> recentExpDetailList = employee.getRecentExpDetails();
+                RecentExpDetail recentExpDetail = RecentExpDetail.builder()
+                        .date(project.getMonth() + "월 " + project.getDay() + "일")
+                        .questGroup("전사 프로젝트")
+                        .questName(project.getProjectTitle())
+                        .score(project.getScore())
+                        .build();
+                recentExpDetailList.add(recentExpDetail);
+                employee.setRecentExpDetails(recentExpDetailList);
+                employeeRepositoryMongo.save(employee);
+            }
 
             // 새로운 데이터 저장
-            projectRepository.saveAll(projectList);
-            log.info("새로운 Project 데이터 저장 완료.");
+            if (!projectsToSave.isEmpty()) {
+                projectRepository.saveAll(projectsToSave);
+            } else {
+                log.info("추가 저장할 새로운 Project 데이터가 없습니다.");
+            }
         } catch (Exception e) {
-            log.error("Google Sheets 동기화 중 오류 발생: ", e);
             throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
         }
     }
@@ -311,35 +364,12 @@ public class GoogleSheetService {
     @Transactional
     public void syncEvaluation(String spreadSheetId, String evaluationRANGE) {
         try {
-            // 상반기, 하반기 평가 데이터 읽기
-            String firstHalfRange = evaluationRANGE + "!B7";
-            String secondHalfRange = evaluationRANGE + "!H7";
-
-            String firstHalf = googleSheetsHelper.readCell(spreadSheetId, firstHalfRange);
-            String secondHalf = googleSheetsHelper.readCell(spreadSheetId, secondHalfRange);
-
-            // 평가 데이터 읽기
-            String firstHalfEvaluationDataRange = evaluationRANGE + "!B9:F";
-            String secondHalfEvaluationDataRange = evaluationRANGE + "!H9:L";
-
-            List<List<Object>> firstHalfEvaluationData = googleSheetsHelper.readSheetData(spreadSheetId, firstHalfEvaluationDataRange);
-            List<List<Object>> secondHalfEvaluationData = googleSheetsHelper.readSheetData(spreadSheetId, secondHalfEvaluationDataRange);
-
-            List<Evaluation> firstHalfEvaluationList = GoogleSheetsConvert.convertToEvaluation(firstHalf, firstHalfEvaluationData);
-            List<Evaluation> secondHalfEvaluationList = GoogleSheetsConvert.convertToEvaluation(secondHalf, secondHalfEvaluationData);
-
-            // 기존 데이터 삭제
-            evaluationRepository.deleteAll();
-
-            // 새로운 데이터 저장
-            evaluationRepository.saveAll(firstHalfEvaluationList);
-            evaluationRepository.saveAll(secondHalfEvaluationList);
-
+            // 평가 데이터 읽기 및 저장을 처리하는 메서드 호출
+            processEvaluationData(spreadSheetId, evaluationRANGE, "!B7", "!B9:F");
+            processEvaluationData(spreadSheetId, evaluationRANGE, "!H7", "!H9:L");
         } catch (Exception e) {
-            log.error("Google Sheets 동기화 중 오류 발생: ", e);
             throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
         }
-
     }
 
     @Transactional
@@ -410,7 +440,6 @@ public class GoogleSheetService {
             levelRepository.saveAll(levelTList);
 
         } catch (Exception e) {
-            log.error("Google Sheets 동기화 중 오류 발생: ", e);
             throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
         }
     }
@@ -426,5 +455,47 @@ public class GoogleSheetService {
 
         List<GroupQuest> groupQuestList = GoogleSheetsConvert.convertToGroupQuest(groupData, expPerWeekData, scoreData);
         return groupQuestList;
+    }
+
+    private void processEvaluationData(String spreadSheetId, String evaluationRANGE, String termCell, String dataRange) throws Exception {
+        // 평가 기간 및 데이터 읽기
+        String termRange = evaluationRANGE + termCell;
+        String evaluationDataRange = evaluationRANGE + dataRange;
+
+        String term = googleSheetsHelper.readCell(spreadSheetId, termRange);
+        List<List<Object>> evaluationData = googleSheetsHelper.readSheetData(spreadSheetId, evaluationDataRange);
+
+        // 평가 데이터 변환
+        List<Evaluation> evaluationList = GoogleSheetsConvert.convertToEvaluation(term, evaluationData);
+        List<Evaluation> existingEvaluationList = evaluationRepository.findAllByTerm(term);
+
+        // 중복 필터링
+        List<Evaluation> evaluationToSave = evaluationList.stream()
+                .filter(newEvaluation -> existingEvaluationList.stream()
+                        .noneMatch(existingEvaluation ->
+                                existingEvaluation.getPersonalEvaluation().getEmployeeId()
+                                        == (newEvaluation.getPersonalEvaluation().getEmployeeId())))
+                .toList();
+
+        for(Evaluation evaluation : evaluationToSave) {
+            Employee employee = employeeRepositoryMongo.findById(String.valueOf(evaluation.getPersonalEvaluation().getEmployeeId()))
+                    .orElseThrow(() -> new CustomException(ErrorCode.EMPLOYEE_NOT_FOUND));
+            List<RecentExpDetail> recentExpDetailList = employee.getRecentExpDetails();
+            RecentExpDetail recentExpDetail = RecentExpDetail.builder()
+                    .date(evaluation.getModifiedAt())
+                    .questGroup("인사평가")
+                    .questName(evaluation.getTerm())
+                    .score(evaluation.getPersonalEvaluation().getExperience())
+                    .build();
+            recentExpDetailList.add(recentExpDetail);
+            employee.setRecentExpDetails(recentExpDetailList);
+            employeeRepositoryMongo.save(employee);
+        }
+        // 저장
+        if (!evaluationToSave.isEmpty()) {
+            evaluationRepository.saveAll(evaluationToSave);
+        } else {
+            log.info("{} 평가 데이터 저장할 새로운 데이터가 없습니다.", term);
+        }
     }
 }

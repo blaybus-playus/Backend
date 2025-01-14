@@ -23,19 +23,15 @@ public class GroupQuest extends Timestamped {
     private int mediumScore; // 중간 점수
 
     @Setter
-    private List<GroupExperience> groupExperiences; // 그룹 경험치 리스트
+    private GroupExperience groupExperiences; // 그룹 경험치 리스트
 
     @Builder
-    public GroupQuest(String affiliation, int department, String period, int maxScore, int mediumScore, List<GroupExperience> groupExperiences) {
+    public GroupQuest(String affiliation, int department, String period, int maxScore, int mediumScore, GroupExperience groupExperiences) {
         this.affiliation = affiliation;
         this.department = department;
         this.period = period;
         this.maxScore = maxScore;
         this.mediumScore = mediumScore;
-        this.groupExperiences = groupExperiences != null ? groupExperiences : new ArrayList<>();
-    }
-
-    public void setGroupExperience(GroupExperience groupExperience) {
-        this.groupExperiences.add(groupExperience);
+        this.groupExperiences = groupExperiences;
     }
 }

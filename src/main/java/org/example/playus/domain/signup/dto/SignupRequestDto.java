@@ -2,7 +2,7 @@ package org.example.playus.domain.signup.dto;
 
 import lombok.Builder;
 import lombok.Getter;
-import org.example.playus.domain.employee.PersonalInfo;
+import org.example.playus.domain.employee.model.PersonalInfo;
 
 @Getter
 public class SignupRequestDto {

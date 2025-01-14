@@ -1,6 +1,9 @@
 package org.example.playus.domain.employee;
 
 import lombok.RequiredArgsConstructor;
+import org.example.playus.domain.employee.dto.EmployeeExpDetailResponseDto;
+import org.example.playus.domain.employee.dto.EmployeeExpReponseDto;
+import org.example.playus.domain.employee.model.Employee;
 import org.example.playus.domain.employeeExp.EmployeeExp;
 import org.example.playus.domain.employeeExp.EmployeeExpRepository;
 import org.example.playus.domain.level.Level;

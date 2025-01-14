@@ -8,7 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.playus.domain.admin.Role;
-import org.example.playus.domain.employee.Employee;
+import org.example.playus.domain.employee.model.Employee;
 import org.example.playus.domain.employee.EmployeeRepositoryMongo;
 import org.example.playus.domain.security.jwt.JwtUtil;
 import org.example.playus.domain.security.service.UserDetailsImpl;
@@ -23,7 +23,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 

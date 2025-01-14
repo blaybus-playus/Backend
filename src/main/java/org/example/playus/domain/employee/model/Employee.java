@@ -1,4 +1,4 @@
-package org.example.playus.domain.employee;
+package org.example.playus.domain.employee.model;
 
 import lombok.Getter;
 import org.example.playus.domain.admin.Admin;
@@ -6,6 +6,7 @@ import org.example.playus.global.Timestamped;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.List;
 import java.util.Map;
 
 @Getter
@@ -20,6 +21,8 @@ public class Employee extends Timestamped {
     private Account account;         // 하위 문서
     private Map<String, Integer> points; // 연도별 포인트 데이터를 Map으로 저장
     private TokenStore tokenStore;
+
+    private List<RecentExpDetail> recentExpDetails;
 
     private Admin admin;
 
@@ -44,6 +47,8 @@ public class Employee extends Timestamped {
     }
 
     public void setTokenStore(TokenStore tokenStore) {this.tokenStore = tokenStore;}
+
+    public void setRecentExpDetails(List<RecentExpDetail> recentExpDetails) {this.recentExpDetails = recentExpDetails;}
 
     public void setAdmin(Admin admin) {this.admin = admin;}
 

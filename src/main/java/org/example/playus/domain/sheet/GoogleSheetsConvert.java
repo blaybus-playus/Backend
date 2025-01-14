@@ -1,11 +1,12 @@
 package org.example.playus.domain.sheet;
 
 import org.example.playus.domain.board.JobGroup;
+import org.example.playus.domain.employee.model.RecentExpDetail;
 import org.example.playus.domain.employeeExp.EmployeeExp;
 import org.example.playus.domain.employeeExp.ExpForYear;
-import org.example.playus.domain.employee.Account;
-import org.example.playus.domain.employee.Employee;
-import org.example.playus.domain.employee.PersonalInfo;
+import org.example.playus.domain.employee.model.Account;
+import org.example.playus.domain.employee.model.Employee;
+import org.example.playus.domain.employee.model.PersonalInfo;
 import org.example.playus.domain.board.Board;
 import org.example.playus.domain.evaluation.Evaluation;
 import org.example.playus.domain.evaluation.PersonalEvaluation;
@@ -27,7 +28,6 @@ public class GoogleSheetsConvert {
     // TODO : 코드 수정 필요 (너무 복잠함)
     public static List<Employee> convertToUsers(List<List<Object>> sheetData) {
         List<Employee> employees = new ArrayList<>();
-        log.info("Sheet data: {}", sheetData);
 
         // 헤더 추출 및 헤더 맵 생성
         List<Object> headers = extractHeaders(sheetData);
@@ -49,14 +49,12 @@ public class GoogleSheetsConvert {
             List<Object> row = sheetData.get(i);
 
             if (row.isEmpty() || row.stream().allMatch(cell -> cell.toString().isBlank())) {
-                log.warn("Row {} is empty and will be skipped.", i);
                 continue;
             }
             while (row.size() < headers.size()) {
                 row.add("");  // 문자열 기본값으로 빈 문자열, 숫자는 "0"
             }
 
-            log.info("Processing row {}: {}", i, row);
 
             // User 객체 생성
             Employee employee = new Employee();
@@ -80,6 +78,10 @@ public class GoogleSheetsConvert {
                             row.get(headerIndexMap.get("변경패스워드")).toString())
                     .build();
             employee.setAccount(account);
+
+            // 최근 경험치 상세 정보 생성
+            List<RecentExpDetail> recentExpDetails = new ArrayList<>();
+            employee.setRecentExpDetails(recentExpDetails);
 
             // 연도별 포인트 설정
             Map<String, Integer> points = new HashMap<>();
@@ -123,7 +125,6 @@ public class GoogleSheetsConvert {
         int mediumScore = Integer.parseInt(scoreData.get(1).get(scoreHeaderIndexMap.get("MEDIUM 점수")).toString());
 
         // 모든 주차별 경험치 정보 생성
-        List<GroupExperience> groupExperiences = new ArrayList<>();
         for (int i = 1; i < expPerWeekData.size(); i++) {
             List<Object> expRow = expPerWeekData.get(i);
             GroupExperience experience = GroupExperience.builder()
@@ -133,20 +134,19 @@ public class GoogleSheetsConvert {
                     .etc(expRow.get(expPerWeekHeaderIndexMap.get("비고")) == null
                             ? "" : expRow.get(expPerWeekHeaderIndexMap.get("비고")).toString())
                     .build();
-            groupExperiences.add(experience);
+
+            // GroupQuest 생성
+            GroupQuest groupQuest = GroupQuest.builder()
+                    .affiliation(affiliation)
+                    .department(department)
+                    .period(period)
+                    .maxScore(maxScore)
+                    .mediumScore(mediumScore)
+                    .groupExperiences(experience)
+                    .build();
+            groupQuests.add(groupQuest);
         }
 
-        // GroupQuest 생성
-        GroupQuest groupQuest = GroupQuest.builder()
-                .affiliation(affiliation)
-                .department(department)
-                .period(period)
-                .maxScore(maxScore)
-                .mediumScore(mediumScore)
-                .groupExperiences(groupExperiences)
-                .build();
-
-        groupQuests.add(groupQuest);
         return groupQuests;
     }
 
@@ -222,19 +222,15 @@ public class GoogleSheetsConvert {
 
     public static List<Board> convertToBoards(List<List<Object>> sheetData) {
         List<Board> boards = new ArrayList<>();
-        log.info("게시글 데이터: {}", sheetData);
 
         if (sheetData.isEmpty() || sheetData.size() < 2) {
-            log.warn("게시글 데이터가 비어 있습니다.");
             return boards;
         }
 
         List<Object> headers = extractHeaders(sheetData);
-        log.info("실제 시트 헤더: {}", headers);
         Map<String, Integer> headerIndexMap = createHeaderIndexMap(headers);
 
         if (!headerIndexMap.containsKey("번호") || !headerIndexMap.containsKey("제목") || !headerIndexMap.containsKey("글")) {
-            log.error("헤더에 '번호', '제목', 또는 '글'이 없습니다.");
             return boards;
         }
 
@@ -312,7 +308,6 @@ public class GoogleSheetsConvert {
 
         Map<String, Integer> evaluationHeaderIndexMap = createHeaderIndexMap(extractHeaders(evaluationData));
 
-        List<PersonalEvaluation> personalEvaluations = new ArrayList<>();
         for (int i = 1; i < evaluationData.size(); i++) {
             List<Object> evaluationRow = evaluationData.get(i);
 
@@ -326,14 +321,12 @@ public class GoogleSheetsConvert {
                     .note(evaluationRow.get(evaluationHeaderIndexMap.get("비고")) == null ? "-" : evaluationRow.get(evaluationHeaderIndexMap.get("비고")).toString())
                     .build();
 
-            personalEvaluations.add(personalEvaluation);
+            Evaluation evaluation = Evaluation.builder()
+                    .term(term)
+                    .personalEvaluation(personalEvaluation)
+                    .build();
+            evaluations.add(evaluation);
         }
-        Evaluation evaluation = Evaluation.builder()
-                .term(term)
-                .personalEvaluation(personalEvaluations)
-                .build();
-        evaluations.add(evaluation);
-
         return evaluations;
     }
 
@@ -421,7 +414,6 @@ public class GoogleSheetsConvert {
     // SheetData Empty 확인 및 헤더 추출
     private static List<Object> extractHeaders(List<List<Object>> sheetData) {
         if (sheetData.isEmpty()) {
-            log.warn("Sheet data is empty.");
             return Collections.emptyList();
         }
         return sheetData.get(0); // 첫 번째 줄 반환

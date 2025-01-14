@@ -1,6 +1,6 @@
 package org.example.playus.domain.security.service;
 
-import org.example.playus.domain.employee.Employee;
+import org.example.playus.domain.employee.model.Employee;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

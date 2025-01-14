@@ -1,6 +1,6 @@
 package org.example.playus.domain.logout;
 
-import org.example.playus.domain.employee.Employee;
+import org.example.playus.domain.employee.model.Employee;
 import org.example.playus.domain.employee.EmployeeRepositoryMongo;
 import org.example.playus.global.common.CommonResponse;
 import org.example.playus.global.exception.CustomException;
