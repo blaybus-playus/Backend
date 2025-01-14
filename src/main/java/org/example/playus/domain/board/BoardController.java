@@ -45,16 +45,14 @@ public class BoardController {
     @GetMapping("/read/search")
     @Operation(summary = "직군별 게시글 조회", description = "직군 코드에 따라 게시글을 조회하거나 전체 게시글을 조회")
     public ResponseEntity<CommonResponse<List<BoardResponseDto>>> searchBoardByJobGroup(
-            @RequestParam(required = false) String jobGroup
+            @RequestParam(required = false) JobGroup jobGroup
     ) {
         List<BoardResponseDto> responseDtos;
 
-        if (jobGroup == null || jobGroup.isBlank()) {
-            // 직군 정보가 없으면 전체 게시글 조회
+        if (jobGroup == null || jobGroup == JobGroup.A) {  // null 또는 ALL일 경우 전체 조회
             responseDtos = boardService.readAllBoards();
         } else {
-            // 특정 직군의 게시글 조회
-            responseDtos = boardService.searchBoard(jobGroup);
+            responseDtos = boardService.searchBoard(jobGroup);  // 특정 직군 조회
         }
 
         return ResponseEntity.ok(new CommonResponse<>("게시글 조회 성공", HttpStatus.OK.value(), responseDtos));

@@ -76,9 +76,12 @@ public class SignupService {
 
         // 기본 권한 설정
         Admin admin = new Admin(Role.ROLE_USER);  // 기본적으로 일반 사용자로 설정
-        if ("사업기획팀".equalsIgnoreCase(requestDto.getPersonalInfo().getDepartment()) && requestDto.getPersonalInfo().getLevel().startsWith("B")) {
-            admin = new Admin(Role.ROLE_ADMIN);  // 특정 조건에 따라 관리자 권한 설정
+
+        // "Admin"이라는 값이 PersonalInfo의 department에 입력되면 관리자 권한 설정
+        if ("Admin".equalsIgnoreCase(requestDto.getPersonalInfo().getDepartment())) {
+            admin = new Admin(Role.ROLE_ADMIN);  // 관리자 권한 부여
         }
+
         employee.setAdmin(admin);
 
         try {

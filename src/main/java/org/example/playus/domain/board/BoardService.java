@@ -24,7 +24,7 @@ public class BoardService {
     @Value("${google.spreadsheet.id}")
     private String spreadsheetId;
 
-    private final String range = "게시판!B6:D";  // 시트 범위
+    private final String range = "게시판!B6:E";  // 시트 범위
 
     private static final GoogleSheetsHelper googleSheetsHelper = new GoogleSheetsHelper();
 
@@ -46,6 +46,12 @@ public class BoardService {
         board.setTitle(boardRequestDto.getTitle().trim());  // 제목 설정
         board.setContent(boardRequestDto.getContent().trim());  // 내용 설정
 
+        JobGroup jobGroup = boardRequestDto.getJobGroup();
+        if (jobGroup == null) {
+            throw new CustomException(ErrorCode.INVALID_GROUP_TYPE);
+        }
+        board.setJobGroup(jobGroup);
+
         // MongoDB에 저장
         Board savedBoard = boardRepository.save(board);
 
@@ -65,6 +71,7 @@ public class BoardService {
                 .id(savedBoard.getId())
                 .title(savedBoard.getTitle())
                 .content(savedBoard.getContent())
+                .jobGroup(board.getJobGroup()) //직군
                 .message("게시글이 등록되었습니다.")
                 .build();
     }
@@ -83,21 +90,11 @@ public class BoardService {
     }
 
     @Transactional(readOnly = true)
-    public List<BoardResponseDto> searchBoard(String jobGroup) {
+    public List<BoardResponseDto> searchBoard(JobGroup jobGroup) {
         log.info("직군 검색 시작 - jobGroup: {}", jobGroup);
 
-        List<Board> boards;
-
-        // jobGroup이 직군 코드인지 확인하여 JobGroup enum으로 변환
-        JobGroup jobGroupEnum;
-        try {
-            jobGroupEnum = JobGroup.valueOf(jobGroup.toUpperCase());  // Enum 변환
-        } catch (IllegalArgumentException e) {
-            throw new CustomException(ErrorCode.INVALID_GROUP_TYPE);
-        }
-
         // 직군 코드에 해당하는 게시글 조회
-        boards = boardRepository.findByJobGroup(jobGroupEnum);
+        List<Board> boards = boardRepository.findByJobGroup(jobGroup);  // 바로 enum으로 검색
 
         if (boards.isEmpty()) {
             throw new CustomException(ErrorCode.SEARCH_NOT_FOUND);
@@ -108,7 +105,7 @@ public class BoardService {
                         .id(board.getId())
                         .title(board.getTitle())
                         .content(board.getContent())
-                        .jobGroup(board.getJobGroup())
+                        .jobGroup(board.getJobGroup())  // enum 값 반환
                         .message("게시글 조회 성공")
                         .build())
                 .toList();
@@ -123,6 +120,7 @@ public class BoardService {
 
         board.setTitle(boardRequestDto.getTitle().trim());
         board.setContent(boardRequestDto.getContent().trim());
+        board.setJobGroup(board.getJobGroup()); //직군
         Board updatedBoard = boardRepository.save(board);
 
         try {
@@ -157,6 +155,7 @@ public class BoardService {
                 .id(updatedBoard.getId())
                 .title(updatedBoard.getTitle())
                 .content(updatedBoard.getContent())
+                .jobGroup(board.getJobGroup()) //직군
                 .message("게시글이 성공적으로 수정되었습니다.")
                 .build();
     }
