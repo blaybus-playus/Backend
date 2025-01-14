@@ -117,15 +117,25 @@ public class GoogleSheetService {
             List<List<Object>> sheetData = googleSheetsHelper.readSheetData(spreadsheetId, range);
             log.info("Sheet Data Read: {}", sheetData);
 
-            List<Employee> employees = GoogleSheetsConvert.convertToUsers(sheetData);
+            List<Employee> newEmployees = GoogleSheetsConvert.convertToUsers(sheetData);
 
-            List<Employee> savedEmployees = employeeRepositoryMongo.saveAll(employees);
+            // 기존 데이터 조회
+            List<Employee> existingEmployees = employeeRepositoryMongo.findAll();
 
-            if (savedEmployees.size() == employees.size()) {
-                log.info("All users saved successfully.");
+            // 중복되지 않는 새로운 데이터 필터링
+            List<Employee> employeesToSave = newEmployees.stream()
+                    .filter(newEmployee -> existingEmployees.stream()
+                            .noneMatch(existingEmployee -> existingEmployee.getEmployeeId().equals(newEmployee.getEmployeeId())))
+                    .toList();
+
+            // 새로운 데이터 저장
+            if (!employeesToSave.isEmpty()) {
+                employeeRepositoryMongo.saveAll(employeesToSave);
+                log.info("새로운 Employee 데이터 저장 완료: {}건", employeesToSave.size());
             } else {
-                log.warn("Some users were not saved.");
+                log.info("추가 저장할 새로운 Employee 데이터가 없습니다.");
             }
+
         } catch (Exception e) {
             log.error("Error while syncing Google Sheets to MongoDB: ", e); // 예외 발생 시 로그 남기기
             throw new RuntimeException("Error while syncing Google Sheets to MongoDB: " + e.getMessage());

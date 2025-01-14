@@ -82,6 +82,10 @@ public class GoogleSheetsConvert {
                     .build();
             employee.setAccount(account);
 
+            // 최근 경험치 상세 정보 생성
+            List<RecentExpDetail> recentExpDetails = new ArrayList<>();
+            employee.setRecentExpDetails(recentExpDetails);
+
             // 연도별 포인트 설정
             Map<String, Integer> points = new HashMap<>();
             for (int year = 2023; year >= 2013; year--) {
