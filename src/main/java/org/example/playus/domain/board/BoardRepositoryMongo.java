@@ -10,4 +10,7 @@ public interface BoardRepositoryMongo extends MongoRepository<Board, String> {
     List<Board> findAllByOrderByIdAsc();
 
     List<Board> findByJobGroup(JobGroup  jobGroup);
+
+    // 제목 + 내용으로 검색
+    List<Board> findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(String title, String content);
 }

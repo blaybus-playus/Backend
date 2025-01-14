@@ -42,23 +42,30 @@ public class BoardController {
         return ResponseEntity.ok(new CommonResponse<>("게시글 조회 성공", HttpStatus.OK.value(), boardList));
     }
 
-    @GetMapping("/read/search")
+    @GetMapping("/read/searchgroup")
     @Operation(summary = "직군별 게시글 조회", description = "직군 코드에 따라 게시글을 조회하거나 전체 게시글을 조회")
     public ResponseEntity<CommonResponse<List<BoardResponseDto>>> searchBoardByJobGroup(
             @RequestParam(required = false) JobGroup jobGroup
     ) {
         List<BoardResponseDto> responseDtos;
 
-        if (jobGroup == null || jobGroup == JobGroup.A) {  // null 또는 ALL일 경우 전체 조회
+        if (jobGroup == null || jobGroup == JobGroup.ALL) {  // null 또는 ALL일 경우 전체 조회
             responseDtos = boardService.readAllBoards();
         } else {
-            responseDtos = boardService.searchBoard(jobGroup);  // 특정 직군 조회
+            responseDtos = boardService.searchBoardByJobGroup(jobGroup);  // 특정 직군 조회
         }
 
         return ResponseEntity.ok(new CommonResponse<>("게시글 조회 성공", HttpStatus.OK.value(), responseDtos));
     }
 
-
+    @GetMapping("/read/search")
+    @Operation(summary = "키워드 기반 게시글 조회", description = "키워드로 제목, 내용, 직군 이름에서 검색")
+    public ResponseEntity<CommonResponse<List<BoardResponseDto>>> searchBoard(
+            @RequestParam String keyword
+    ) {
+        List<BoardResponseDto> responseDtos = boardService.searchBoardByKeyword(keyword);
+        return ResponseEntity.ok(new CommonResponse<>("게시글 조회 성공", HttpStatus.OK.value(), responseDtos));
+    }
 
     @PutMapping("/update/{id}")
     @Operation(summary = "게시글 수정", description = "게시글 수정")
