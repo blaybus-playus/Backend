@@ -50,9 +50,12 @@ public class SignupService {
             throw new CustomException(ErrorCode.USER_ALREADY_EXIST);
         }
 
+        // 기본 비밀번호 "1111"로 설정
+        String defaultPassword = "1111";
+
         Account account = Account.builder()
                 .username(requestDto.getUsername())
-                .defaultPassword(requestDto.getPassword())
+                .defaultPassword(defaultPassword)
                 .updatedPassword("")
                 .build();
 
