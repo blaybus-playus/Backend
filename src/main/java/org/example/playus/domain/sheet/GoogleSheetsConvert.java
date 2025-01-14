@@ -258,7 +258,7 @@ public class GoogleSheetsConvert {
                 log.warn("제목 또는 내용이 비어 있습니다. (행 번호: {}), 데이터: {}", i + 1, row);
             }
 
-            // 직군 설정 (존재하지 않으면 기본값으로 "T")
+            // 직군 설정 (존재하지 않으면 기본값으로 "A")
             JobGroup jobGroup = JobGroup.A;  // 기본값
             if (jobGroupIndex != -1 && row.size() > jobGroupIndex) {
                 String jobGroupValue = row.get(jobGroupIndex).toString().trim();
