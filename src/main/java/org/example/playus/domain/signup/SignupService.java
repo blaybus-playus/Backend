@@ -49,6 +49,7 @@ public class SignupService {
             throw new CustomException(ErrorCode.USER_ALREADY_EXIST);
         }
 
+
         Account account = Account.builder()
                 .username(requestDto.getUsername())
                 .defaultPassword(requestDto.getPassword())

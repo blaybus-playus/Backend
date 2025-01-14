@@ -255,7 +255,7 @@ public class GoogleSheetsConvert {
             }
 
             // 직군 설정 (존재하지 않으면 기본값으로 "A")
-            JobGroup jobGroup = JobGroup.A;  // 기본값
+            JobGroup jobGroup = JobGroup.ALL;  // 기본값
             if (jobGroupIndex != -1 && row.size() > jobGroupIndex) {
                 String jobGroupValue = row.get(jobGroupIndex).toString().trim();
                 try {

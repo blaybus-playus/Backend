@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
 
 @RestController
 @RequestMapping("/employee")
@@ -33,8 +35,8 @@ public class EmployeeController {
         }
     }
 
-    @GetMapping("/exp/{year}")
-    public ResponseEntity<CommonResponse> getEmployeeExpByYear(@AuthenticationPrincipal UserDetailsImpl userDetails, @PathVariable int year) {
+    @GetMapping("/exp")
+    public ResponseEntity<CommonResponse> getEmployeeExpByYear(@AuthenticationPrincipal UserDetailsImpl userDetails, @RequestParam int year) {
         try {
             Employee employee = userDetails.getEmployee();
             EmployeeExpDetailResponseDto responseDto = employeeService.getEmployeeExpByYear(Integer.parseInt(employee.getEmployeeId()), year);

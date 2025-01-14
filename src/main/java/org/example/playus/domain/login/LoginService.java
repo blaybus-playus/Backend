@@ -20,7 +20,6 @@ public class LoginService {
     private final EmployeeRepositoryMongo employeeRepositoryMongo;
     private final JwtUtil jwtUtil;
 
-    // TODO : JWT 토큰 발급 로직까지 추가해야 함
     public LoginResponseDto login(LoginRequestDto requestDto) {
         String username = requestDto.getUsername();
         String password = requestDto.getPassword();
@@ -28,7 +27,13 @@ public class LoginService {
         Employee loginEmployee = employeeRepositoryMongo.findByAccountUsername(username)
                 .orElseThrow(() -> new CustomException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
-        if(!loginEmployee.getAccount().getDefaultPassword().equals(password)) {
+        // 비밀번호 확인
+        String updatedPassword = loginEmployee.getAccount().getUpdatedPassword();
+        String defaultPassword = loginEmployee.getAccount().getDefaultPassword();
+
+        // 변경된 비밀번호가 있는 경우: 변경된 비밀번호와 비교, 없으면 기본 비밀번호와 비교
+        if ((updatedPassword != null && !updatedPassword.isBlank() && !updatedPassword.equals(password)) ||
+                (updatedPassword == null || updatedPassword.isBlank()) && !defaultPassword.equals(password)) {
             throw new CustomException(ErrorCode.PASSWORD_NOT_CORRECT);
         }
 
