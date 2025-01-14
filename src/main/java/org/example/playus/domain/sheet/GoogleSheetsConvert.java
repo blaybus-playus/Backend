@@ -1,6 +1,7 @@
 package org.example.playus.domain.sheet;
 
 import org.example.playus.domain.board.JobGroup;
+import org.example.playus.domain.employee.RecentExpDetail;
 import org.example.playus.domain.employeeExp.EmployeeExp;
 import org.example.playus.domain.employeeExp.ExpForYear;
 import org.example.playus.domain.employee.Account;

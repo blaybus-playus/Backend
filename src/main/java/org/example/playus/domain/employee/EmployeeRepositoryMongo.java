@@ -12,4 +12,7 @@ public interface EmployeeRepositoryMongo extends MongoRepository<Employee, Strin
     Optional<Employee> findByAccountUsername(String username);
 
     List<Employee> findByPersonalInfoJoinDate(String joinDate);
+
+    // 메서드 이름 기반 쿼리
+    List<Employee> findAllByPersonalInfo_Department(String department);
 }

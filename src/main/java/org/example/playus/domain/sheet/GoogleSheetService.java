@@ -12,6 +12,7 @@ import org.example.playus.domain.board.Board;
 import org.example.playus.domain.board.BoardRepositoryMongo;
 import org.example.playus.domain.employee.Employee;
 import org.example.playus.domain.employee.EmployeeRepositoryMongo;
+import org.example.playus.domain.employee.RecentExpDetail;
 import org.example.playus.domain.employeeExp.EmployeeExp;
 import org.example.playus.domain.employeeExp.EmployeeExpRepository;
 import org.example.playus.domain.evaluation.Evaluation;
@@ -24,6 +25,8 @@ import org.example.playus.domain.quest.groupGuset.GroupExperience;
 import org.example.playus.domain.quest.groupGuset.GroupQuest;
 import org.example.playus.domain.quest.groupGuset.GroupQuestRepositoryMongo;
 import org.example.playus.domain.quest.leaderQuest.*;
+import org.example.playus.global.exception.CustomException;
+import org.example.playus.global.exception.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -133,9 +136,11 @@ public class GoogleSheetService {
     public void syncGroupQuestData(String spreadSheetId, String groupQuestRange) throws Exception {
 
         List<GroupQuest> newGroupQuests = moduleGroupQuestData(spreadSheetId, groupQuestRange);
+        //TODO : get(0)을 했을 경우 다른 값으로 저장 될 가능성을 배제하는 것이기 때문에 수정해야 할 필요가 있다.
         List<GroupQuest> existingGroupQuests = groupQuestRepositoryMongo.findAllByAffiliationAndDepartment(
                 newGroupQuests.get(0).getAffiliation(), newGroupQuests.get(0).getDepartment());
-        log.info("기존 GroupQuest 데이터 조회 완료: {}", existingGroupQuests.size());
+
+        String affiliation = newGroupQuests.get(0).getAffiliation();
 
         // 새로운 데이터 업데이트 또는 추가
         for (GroupQuest newQuest : newGroupQuests) {
@@ -144,18 +149,28 @@ public class GoogleSheetService {
                 GroupExperience existingExp = existingQuest.getGroupExperiences();
                 GroupExperience newExp = newQuest.getGroupExperiences();
 
-                log.debug("Checking week: existing = {}, new = {}", existingExp.getWeek(), newExp.getWeek());
-                log.debug("Checking experience: existing = {}, new = {}", existingExp.getExperience(), newExp.getExperience());
-                log.debug("Checking etc: existing = {}, new = {}", existingExp.getEtc(), newExp.getEtc());
-
                 if (existingExp.getWeek() == newExp.getWeek()) {
                     if (existingExp.isDifferent(newExp)) {
 
                         existingExp.setExperience(newExp.getExperience());
                         existingExp.setEtc(newExp.getEtc());
-                        log.info("GroupQuest 데이터 업데이트: {} {} {}", existingQuest.getGroupExperiences().getWeek(), existingQuest.getGroupExperiences().getExperience(), existingQuest.getGroupExperiences().getEtc());
 
                         groupQuestRepositoryMongo.save(existingQuest);
+
+                        RecentExpDetail recentExpDetail = RecentExpDetail.builder()
+                                .date(existingQuest.getModifiedAt())
+                                .questGroup("그룹 퀘스트")
+                                .questName("직무별 퀘스트")
+                                .score(existingQuest.getGroupExperiences().getExperience())
+                                .build();
+                        // 업데이트 되는 시점의 경험치를 recentExpDetails에 저장
+                        List<Employee> employees = employeeRepositoryMongo.findAllByPersonalInfo_Department(affiliation);
+                        for (Employee employee : employees) {
+                            List<RecentExpDetail> recentExpDetailList = employee.getRecentExpDetails();
+                            recentExpDetailList.add(recentExpDetail);
+                            employee.setRecentExpDetails(recentExpDetailList);
+                            employeeRepositoryMongo.save(employee);
+                        }
                     }
                     isUpdated = true;
                     break;
@@ -209,7 +224,6 @@ public class GoogleSheetService {
 
             // 기존 데이터 조회
             List<LeaderQuestExp> existingLeaderQuestExps = leaderQuestExpRepository.findAllByAffiliation(affiliation);
-
             // 새 데이터 업데이트 또는 추가
             for (LeaderQuestExp newExp : newLeaderQuestExpList) {
                 boolean isUpdated = false;
@@ -227,6 +241,21 @@ public class GoogleSheetService {
                             existingList.setScore(newList.getScore());
 
                             leaderQuestExpRepository.save(existingExp);
+
+                            Employee employee = employeeRepositoryMongo.findById(String.valueOf(existingList.getEmployeeId()))
+                                    .orElseThrow(() -> new CustomException(ErrorCode.EMPLOYEE_NOT_FOUND));
+
+                            RecentExpDetail recentExpDetail = RecentExpDetail.builder()
+                                    .date(existingExp.getModifiedAt())
+                                    .questGroup("리더 퀘스트")
+                                    .questName(existingList.getQuestName())
+                                    .score(existingList.getScore())
+                                    .build();
+                            List<RecentExpDetail> recentExpDetailList = employee.getRecentExpDetails();
+
+                            recentExpDetailList.add(recentExpDetail);
+                            employee.setRecentExpDetails(recentExpDetailList);
+                            employeeRepositoryMongo.save(employee);
                         }
 
                         isUpdated = true;
