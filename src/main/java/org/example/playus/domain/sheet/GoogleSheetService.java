@@ -17,6 +17,7 @@ import org.example.playus.domain.employeeExp.EmployeeExp;
 import org.example.playus.domain.employeeExp.EmployeeExpRepository;
 import org.example.playus.domain.evaluation.Evaluation;
 import org.example.playus.domain.evaluation.EvaluationRepository;
+import org.example.playus.domain.evaluation.PersonalEvaluation;
 import org.example.playus.domain.level.Level;
 import org.example.playus.domain.level.LevelRepository;
 import org.example.playus.domain.project.Project;
@@ -480,6 +481,20 @@ public class GoogleSheetService {
                                         == (newEvaluation.getPersonalEvaluation().getEmployeeId())))
                 .toList();
 
+        for(Evaluation evaluation : evaluationToSave) {
+            Employee employee = employeeRepositoryMongo.findById(String.valueOf(evaluation.getPersonalEvaluation().getEmployeeId()))
+                    .orElseThrow(() -> new CustomException(ErrorCode.EMPLOYEE_NOT_FOUND));
+            List<RecentExpDetail> recentExpDetailList = employee.getRecentExpDetails();
+            RecentExpDetail recentExpDetail = RecentExpDetail.builder()
+                    .date(evaluation.getModifiedAt())
+                    .questGroup("인사평가")
+                    .questName(evaluation.getTerm())
+                    .score(evaluation.getPersonalEvaluation().getExperience())
+                    .build();
+            recentExpDetailList.add(recentExpDetail);
+            employee.setRecentExpDetails(recentExpDetailList);
+            employeeRepositoryMongo.save(employee);
+        }
         // 저장
         if (!evaluationToSave.isEmpty()) {
             evaluationRepository.saveAll(evaluationToSave);

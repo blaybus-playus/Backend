@@ -2,8 +2,10 @@ package org.example.playus.domain.evaluation;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
+@Setter
 public class PersonalEvaluation {
     private int employeeId;  // 사번
     private String name;        // 대상자
