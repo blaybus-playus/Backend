@@ -21,9 +21,7 @@ public class Employee extends Timestamped {
     private Account account;         // 하위 문서
     private Map<String, Integer> points; // 연도별 포인트 데이터를 Map으로 저장
     private TokenStore tokenStore;
-
     private List<RecentExpDetail> recentExpDetails;
-
     private Admin admin;
 
     public void setEmployeeId(String employeeId) {
