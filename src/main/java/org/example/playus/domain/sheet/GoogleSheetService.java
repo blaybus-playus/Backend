@@ -350,6 +350,21 @@ public class GoogleSheetService {
                             )) // 중복 확인
                     .toList();
 
+            for(Project project : projectsToSave) {
+                Employee employee = employeeRepositoryMongo.findById(String.valueOf(project.getEmployeeId()))
+                        .orElseThrow(() -> new CustomException(ErrorCode.EMPLOYEE_NOT_FOUND));
+                List<RecentExpDetail> recentExpDetailList = employee.getRecentExpDetails();
+                RecentExpDetail recentExpDetail = RecentExpDetail.builder()
+                        .date(project.getModifiedAt())
+                        .questGroup("전사 프로젝트")
+                        .questName(project.getProjectTitle())
+                        .score(project.getScore())
+                        .build();
+                recentExpDetailList.add(recentExpDetail);
+                employee.setRecentExpDetails(recentExpDetailList);
+                employeeRepositoryMongo.save(employee);
+            }
+
             // 새로운 데이터 저장
             if (!projectsToSave.isEmpty()) {
                 projectRepository.saveAll(projectsToSave);
