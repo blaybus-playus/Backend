@@ -3,7 +3,9 @@ package org.example.playus.domain.employee;
 import lombok.RequiredArgsConstructor;
 import org.example.playus.domain.employee.dto.EmployeeExpDetailResponseDto;
 import org.example.playus.domain.employee.dto.EmployeeExpReponseDto;
+import org.example.playus.domain.employee.dto.EmployeeHistoryResponseDto;
 import org.example.playus.domain.employee.model.Employee;
+import org.example.playus.domain.employee.model.RecentExpDetail;
 import org.example.playus.domain.employeeExp.EmployeeExp;
 import org.example.playus.domain.employeeExp.EmployeeExpRepository;
 import org.example.playus.domain.level.Level;
@@ -15,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -96,5 +99,25 @@ public class EmployeeService {
                 .leaderQuestExp(employeeExp.getExpForYear().getLeaderQuestExp())
                 .projectExp(employeeExp.getExpForYear().getProjectExp())
                 .build();
+    }
+
+    public List<EmployeeHistoryResponseDto> getEmployeeHistory(int employeeId) {
+        Employee employee = employeeRepository.findById(String.valueOf(employeeId))
+                .orElseThrow(() -> new CustomException(ErrorCode.EMPLOYEE_NOT_FOUND));
+
+        List<EmployeeHistoryResponseDto> responseDto = new ArrayList<>();
+
+        for(RecentExpDetail history : employee.getRecentExpDetails()) {
+            responseDto.add(EmployeeHistoryResponseDto.builder()
+                    .employeeId(employee.getEmployeeId())
+                    .employeeName(employee.getPersonalInfo().getName())
+                    .date(history.getDate())
+                    .questGroup(history.getQuestGroup())
+                    .questName(history.getQuestName())
+                    .score(history.getScore())
+                    .build());
+        }
+
+        return responseDto;
     }
 }
