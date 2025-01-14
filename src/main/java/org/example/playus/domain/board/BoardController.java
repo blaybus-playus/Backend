@@ -2,7 +2,6 @@ package org.example.playus.domain.board;
 
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.example.playus.domain.board.dto.BoardRequestDto;
 import org.example.playus.domain.board.dto.BoardResponseDto;
 import org.example.playus.domain.security.service.UserDetailsImpl;
