@@ -4,11 +4,11 @@ import lombok.Getter;
 
 @Getter
 public enum JobGroup {
-    T("기술직군"),
-    F("현장직군"),
-    B("관리직군"),
-    G("성장전략"),
-    A("전체직군")
+    TECH("기술직군"),
+    FIELD("현장직군"),
+    MANAGEMENT("관리직군"),
+    GROWTH("성장전략"),
+    ALL("전체직군")
     ;
     private final String description;
 

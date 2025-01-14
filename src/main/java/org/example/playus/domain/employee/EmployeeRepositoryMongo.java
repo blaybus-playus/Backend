@@ -9,7 +9,11 @@ import java.util.Optional;
 @Repository
 public interface EmployeeRepositoryMongo extends MongoRepository<Employee, String> {
 
+    //여기서 말하는 Username 은 ID
     Optional<Employee> findByAccountUsername(String username);
 
     List<Employee> findByPersonalInfoJoinDate(String joinDate);
+
+    // 사원 이름
+    List<Employee> findByPersonalInfoNameContainingIgnoreCase(String name);
 }

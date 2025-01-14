@@ -32,8 +32,8 @@ public class LoginService {
         String defaultPassword = loginEmployee.getAccount().getDefaultPassword();
 
         // 변경된 비밀번호가 있는 경우: 변경된 비밀번호와 비교, 없으면 기본 비밀번호와 비교
-        if ((updatedPassword != null && !updatedPassword.equals(password)) ||
-                (updatedPassword == null && !defaultPassword.equals(password))) {
+        if ((updatedPassword != null && !updatedPassword.isBlank() && !updatedPassword.equals(password)) ||
+                (updatedPassword == null || updatedPassword.isBlank()) && !defaultPassword.equals(password)) {
             throw new CustomException(ErrorCode.PASSWORD_NOT_CORRECT);
         }
 
