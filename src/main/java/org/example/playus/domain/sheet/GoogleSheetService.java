@@ -81,12 +81,9 @@ public class GoogleSheetService {
             ValueRange response = sheetsService.spreadsheets().values()
                     .get(spreadsheetId, range)
                     .execute();
-            // 응답 값 로그
-            log.info("Google Sheets API Response: {}", response.getValues());
 
             return response.getValues() != null ? response.getValues().get(0) : List.of(); // 첫 번째 행 반환
         } catch (IOException e) {
-            log.error("Error accessing Google Sheets API: ", e); // 예외 발생 시 로그 남기기
             throw new RuntimeException("Error accessing Google Sheets API: " + e.getMessage());
         }
     }
@@ -107,7 +104,6 @@ public class GoogleSheetService {
             syncLevelExp(spreadSheetId, levelExpRange);
 
         } catch (Exception e) {
-            log.error("Google Sheets 동기화 중 오류 발생: ", e);
             throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
         }
     }
@@ -132,13 +128,11 @@ public class GoogleSheetService {
             // 새로운 데이터 저장
             if (!employeesToSave.isEmpty()) {
                 employeeRepositoryMongo.saveAll(employeesToSave);
-                log.info("새로운 Employee 데이터 저장 완료: {}건", employeesToSave.size());
             } else {
                 log.info("추가 저장할 새로운 Employee 데이터가 없습니다.");
             }
 
         } catch (Exception e) {
-            log.error("Error while syncing Google Sheets to MongoDB: ", e); // 예외 발생 시 로그 남기기
             throw new RuntimeException("Error while syncing Google Sheets to MongoDB: " + e.getMessage());
         }
     }
@@ -191,7 +185,6 @@ public class GoogleSheetService {
                 groupQuestRepositoryMongo.save(newQuest);
             }
         }
-        log.info("GroupQuest 데이터 동기화 완료: {}", newGroupQuests.size());
     }
 
     @Transactional
@@ -210,15 +203,12 @@ public class GoogleSheetService {
             List<LeaderQuest> existingLeaderQuests = leaderQuestRepository.findAllByAffiliation(affiliation);
             if (!existingLeaderQuests.isEmpty()) {
                 leaderQuestRepository.deleteAll(existingLeaderQuests);
-                log.info("기존 LeaderQuest 데이터 삭제 완료: {}", affiliation);
             }
 
             // 새로운 데이터 저장
             leaderQuestRepository.saveAll(newLeaderQuests);
-            log.info("새로운 LeaderQuest 데이터 저장 완료: {}", affiliation);
 
         } catch (Exception e) {
-            log.error("Google Sheets 동기화 중 오류 발생: ", e);
             throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
         }
     }
@@ -277,9 +267,7 @@ public class GoogleSheetService {
                     leaderQuestExpRepository.save(newExp);
                 }
             }
-            log.info("LeaderQuestExp 데이터 동기화 완료: {}", affiliation);
         } catch (Exception e) {
-            log.error("Google Sheets 동기화 중 오류 발생: ", e);
             throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
         }
     }
@@ -320,10 +308,8 @@ public class GoogleSheetService {
 
             // 시트 업데이트
             googleSheetsHelper.updateSheetData(spreadsheetId, boardRange, updatedPostData);
-            log.info("MongoDB의 게시글 데이터를 Google Sheets에 업데이트 완료");
 
         } catch (Exception e) {
-            log.error("게시글 동기화 중 오류 발생: ", e);
             throw new RuntimeException("게시글 동기화 중 오류 발생: " + e.getMessage());
         }
     }
@@ -368,12 +354,10 @@ public class GoogleSheetService {
             // 새로운 데이터 저장
             if (!projectsToSave.isEmpty()) {
                 projectRepository.saveAll(projectsToSave);
-                log.info("새로운 Project 데이터 저장 완료: {}건", projectsToSave.size());
             } else {
                 log.info("추가 저장할 새로운 Project 데이터가 없습니다.");
             }
         } catch (Exception e) {
-            log.error("Google Sheets 동기화 중 오류 발생: ", e);
             throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
         }
     }
@@ -385,7 +369,6 @@ public class GoogleSheetService {
             processEvaluationData(spreadSheetId, evaluationRANGE, "!B7", "!B9:F");
             processEvaluationData(spreadSheetId, evaluationRANGE, "!H7", "!H9:L");
         } catch (Exception e) {
-            log.error("Google Sheets 동기화 중 오류 발생: ", e);
             throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
         }
     }
@@ -458,7 +441,6 @@ public class GoogleSheetService {
             levelRepository.saveAll(levelTList);
 
         } catch (Exception e) {
-            log.error("Google Sheets 동기화 중 오류 발생: ", e);
             throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
         }
     }
@@ -513,7 +495,6 @@ public class GoogleSheetService {
         // 저장
         if (!evaluationToSave.isEmpty()) {
             evaluationRepository.saveAll(evaluationToSave);
-            log.info("{} 평가 데이터 저장 완료: {}건", term, evaluationToSave.size());
         } else {
             log.info("{} 평가 데이터 저장할 새로운 데이터가 없습니다.", term);
         }

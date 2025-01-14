@@ -28,7 +28,6 @@ public class GoogleSheetsConvert {
     // TODO : 코드 수정 필요 (너무 복잠함)
     public static List<Employee> convertToUsers(List<List<Object>> sheetData) {
         List<Employee> employees = new ArrayList<>();
-        log.info("Sheet data: {}", sheetData);
 
         // 헤더 추출 및 헤더 맵 생성
         List<Object> headers = extractHeaders(sheetData);
@@ -50,14 +49,12 @@ public class GoogleSheetsConvert {
             List<Object> row = sheetData.get(i);
 
             if (row.isEmpty() || row.stream().allMatch(cell -> cell.toString().isBlank())) {
-                log.warn("Row {} is empty and will be skipped.", i);
                 continue;
             }
             while (row.size() < headers.size()) {
                 row.add("");  // 문자열 기본값으로 빈 문자열, 숫자는 "0"
             }
 
-            log.info("Processing row {}: {}", i, row);
 
             // User 객체 생성
             Employee employee = new Employee();
@@ -225,19 +222,15 @@ public class GoogleSheetsConvert {
 
     public static List<Board> convertToBoards(List<List<Object>> sheetData) {
         List<Board> boards = new ArrayList<>();
-        log.info("게시글 데이터: {}", sheetData);
 
         if (sheetData.isEmpty() || sheetData.size() < 2) {
-            log.warn("게시글 데이터가 비어 있습니다.");
             return boards;
         }
 
         List<Object> headers = extractHeaders(sheetData);
-        log.info("실제 시트 헤더: {}", headers);
         Map<String, Integer> headerIndexMap = createHeaderIndexMap(headers);
 
         if (!headerIndexMap.containsKey("번호") || !headerIndexMap.containsKey("제목") || !headerIndexMap.containsKey("글")) {
-            log.error("헤더에 '번호', '제목', 또는 '글'이 없습니다.");
             return boards;
         }
 
@@ -421,7 +414,6 @@ public class GoogleSheetsConvert {
     // SheetData Empty 확인 및 헤더 추출
     private static List<Object> extractHeaders(List<List<Object>> sheetData) {
         if (sheetData.isEmpty()) {
-            log.warn("Sheet data is empty.");
             return Collections.emptyList();
         }
         return sheetData.get(0); // 첫 번째 줄 반환
