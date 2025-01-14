@@ -3,6 +3,7 @@ package org.example.playus.domain.quest.groupGuset;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import org.example.playus.domain.quest.leaderQuest.LeaderQuestEmployeeList;
 
 @Getter
 public class GroupExperience {
@@ -17,5 +18,9 @@ public class GroupExperience {
         this.week = week;
         this.experience = experience;
         this.etc = etc;
+    }
+
+    public boolean isDifferent(GroupExperience other) {
+        return !this.etc.equals(other.etc) ||  this.experience != other.experience;
     }
 }

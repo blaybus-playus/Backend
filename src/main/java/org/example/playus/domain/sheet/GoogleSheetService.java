@@ -23,6 +23,7 @@ import org.example.playus.domain.level.Level;
 import org.example.playus.domain.level.LevelRepository;
 import org.example.playus.domain.project.Project;
 import org.example.playus.domain.project.ProjectRepository;
+import org.example.playus.domain.quest.groupGuset.GroupExperience;
 import org.example.playus.domain.quest.groupGuset.GroupQuest;
 import org.example.playus.domain.quest.groupGuset.GroupQuestRepositoryMongo;
 import org.example.playus.domain.quest.leaderQuest.*;
@@ -120,9 +121,6 @@ public class GoogleSheetService {
             log.info("Sheet Data Read: {}", sheetData);
 
             List<Employee> employees = GoogleSheetsConvert.convertToUsers(sheetData);
-            for (Employee employee : employees) {
-                System.out.println(employee);
-            }
 
             List<Employee> savedEmployees = employeeRepositoryMongo.saveAll(employees);
 
@@ -141,32 +139,39 @@ public class GoogleSheetService {
     public void syncGroupQuestData(String spreadSheetId, String groupQuestRange) throws Exception {
 
         List<GroupQuest> newGroupQuests = moduleGroupQuestData(spreadSheetId, groupQuestRange);
+        List<GroupQuest> existingGroupQuests = groupQuestRepositoryMongo.findAllByAffiliationAndDepartment(
+                newGroupQuests.get(0).getAffiliation(), newGroupQuests.get(0).getDepartment());
+        log.info("기존 GroupQuest 데이터 조회 완료: {}", existingGroupQuests.size());
 
+        // 새로운 데이터 업데이트 또는 추가
         for (GroupQuest newQuest : newGroupQuests) {
-            // 먼저 기존의 모든 중복 데이터 삭제
-            List<GroupQuest> duplicates = groupQuestRepositoryMongo.findAllByAffiliationAndDepartment(
-                    newQuest.getAffiliation(),
-                    newQuest.getDepartment()
-            );
+            boolean isUpdated = false;
+            for (GroupQuest existingQuest : existingGroupQuests) {
+                GroupExperience existingExp = existingQuest.getGroupExperiences();
+                GroupExperience newExp = newQuest.getGroupExperiences();
 
-            if (!duplicates.isEmpty()) {
-                // 가장 최근 데이터 하나만 남기고 나머지 삭제
-                GroupQuest latestQuest = duplicates.get(0);
-                duplicates.remove(0);
-                if (!duplicates.isEmpty()) {
-                    groupQuestRepositoryMongo.deleteAll(duplicates);
+                log.debug("Checking week: existing = {}, new = {}", existingExp.getWeek(), newExp.getWeek());
+                log.debug("Checking experience: existing = {}, new = {}", existingExp.getExperience(), newExp.getExperience());
+                log.debug("Checking etc: existing = {}, new = {}", existingExp.getEtc(), newExp.getEtc());
+
+                if (existingExp.getWeek() == newExp.getWeek()) {
+                    if (existingExp.isDifferent(newExp)) {
+
+                        existingExp.setExperience(newExp.getExperience());
+                        existingExp.setEtc(newExp.getEtc());
+                        log.info("GroupQuest 데이터 업데이트: {} {} {}", existingQuest.getGroupExperiences().getWeek(), existingQuest.getGroupExperiences().getExperience(), existingQuest.getGroupExperiences().getEtc());
+
+                        groupQuestRepositoryMongo.save(existingQuest);
+                    }
+                    isUpdated = true;
+                    break;
                 }
-
-                // 최근 데이터의 경험치 정보 업데이트
-                latestQuest.setGroupExperiences(newQuest.getGroupExperiences());
-                groupQuestRepositoryMongo.save(latestQuest);
-                log.info("기존 GroupQuest 데이터 업데이트 완료: {}", latestQuest.getAffiliation());
-            } else {
-                // 새로운 데이터 저장
+            }
+            if (!isUpdated) {
                 groupQuestRepositoryMongo.save(newQuest);
-                log.info("새로운 GroupQuest 데이터 저장 완료: {}", newQuest.getAffiliation());
             }
         }
+        log.info("GroupQuest 데이터 동기화 완료: {}", newGroupQuests.size());
     }
 
     @Transactional
@@ -273,7 +278,7 @@ public class GoogleSheetService {
                     updatedPostData.add(List.of(
                             board.getId(),  // MongoDB의 _id를 사용
                             board.getTitle(),
-                            board.getContent() != null ? board.getContent() : "" ,
+                            board.getContent() != null ? board.getContent() : "",
                             board.getJobGroup() != null ? board.getJobGroup().name() : ""  // 직군 enum 값 추가
                     ));
                 }

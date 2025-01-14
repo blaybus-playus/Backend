@@ -123,7 +123,6 @@ public class GoogleSheetsConvert {
         int mediumScore = Integer.parseInt(scoreData.get(1).get(scoreHeaderIndexMap.get("MEDIUM 점수")).toString());
 
         // 모든 주차별 경험치 정보 생성
-        List<GroupExperience> groupExperiences = new ArrayList<>();
         for (int i = 1; i < expPerWeekData.size(); i++) {
             List<Object> expRow = expPerWeekData.get(i);
             GroupExperience experience = GroupExperience.builder()
@@ -133,20 +132,19 @@ public class GoogleSheetsConvert {
                     .etc(expRow.get(expPerWeekHeaderIndexMap.get("비고")) == null
                             ? "" : expRow.get(expPerWeekHeaderIndexMap.get("비고")).toString())
                     .build();
-            groupExperiences.add(experience);
+
+            // GroupQuest 생성
+            GroupQuest groupQuest = GroupQuest.builder()
+                    .affiliation(affiliation)
+                    .department(department)
+                    .period(period)
+                    .maxScore(maxScore)
+                    .mediumScore(mediumScore)
+                    .groupExperiences(experience)
+                    .build();
+            groupQuests.add(groupQuest);
         }
 
-        // GroupQuest 생성
-        GroupQuest groupQuest = GroupQuest.builder()
-                .affiliation(affiliation)
-                .department(department)
-                .period(period)
-                .maxScore(maxScore)
-                .mediumScore(mediumScore)
-                .groupExperiences(groupExperiences)
-                .build();
-
-        groupQuests.add(groupQuest);
         return groupQuests;
     }
 
