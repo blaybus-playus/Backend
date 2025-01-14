@@ -29,22 +29,25 @@ public class UserService {
         employeeRepositoryMongo.save(employee);
     }
 
-    public void updatePersonalInfoAsUser(String username, UserUpdateRequestDtoForUser requestDto) {
+    public void updatePersonalInfoAsUser(String username, String currentPassword, UserUpdateRequestDtoForUser requestDto) {
         Employee employee = employeeRepositoryMongo.findByAccountUsername(username)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        Account account = employee.getAccount();
-        String newPassword = requestDto.getUpdatedPassword();
+        // 현재 비밀번호 검증
+        String savedPassword = employee.getAccount().getUpdatedPassword() != null ?
+                employee.getAccount().getUpdatedPassword() : employee.getAccount().getDefaultPassword();
 
-        if (newPassword != null && !newPassword.isBlank()) {
-            if (account.getUpdatedPassword() == null || account.getUpdatedPassword().isBlank()) {
-                account.setUpdatedPassword(newPassword);
-            } else {
-                account.setDefaultPassword(account.getUpdatedPassword());
-                account.setUpdatedPassword(newPassword);
-            }
+        if (!currentPassword.equals(savedPassword)) {
+            throw new CustomException(ErrorCode.PASSWORD_NOT_CORRECT);
         }
 
+        // 새 비밀번호가 존재하면 업데이트
+        String newPassword = requestDto.getNewPassword();
+        if (newPassword != null && !newPassword.isBlank()) {
+            employee.getAccount().setUpdatedPassword(newPassword);
+        }
+
+        // 캐릭터 ID 업데이트
         if (requestDto.getCharacterId() != null && !requestDto.getCharacterId().isBlank()) {
             employee.setCharacterId(requestDto.getCharacterId());
         }
