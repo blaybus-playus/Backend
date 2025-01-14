@@ -9,12 +9,10 @@ public class SignupRequestDto {
 
     private String username;
     private PersonalInfo personalInfo;
-    private String password;
 
     @Builder
-    public SignupRequestDto(int conum, String username, String password, PersonalInfo personalInfo) {
+    public SignupRequestDto(int conum, String username, PersonalInfo personalInfo) {
         this.username = username;
         this.personalInfo = personalInfo;
-        this.password = password;
     }
 }
