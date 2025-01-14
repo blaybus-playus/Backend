@@ -1,6 +1,6 @@
 package org.example.playus.sheet;
 
-import org.example.playus.domain.employee.Employee;
+import org.example.playus.domain.employee.model.Employee;
 import org.example.playus.domain.sheet.GoogleSheetsConvert;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;

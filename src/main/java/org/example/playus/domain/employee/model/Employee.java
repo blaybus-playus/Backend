@@ -1,4 +1,4 @@
-package org.example.playus.domain.employee;
+package org.example.playus.domain.employee.model;
 
 import lombok.Getter;
 import org.example.playus.domain.admin.Admin;

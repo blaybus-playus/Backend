@@ -1,12 +1,12 @@
 package org.example.playus.domain.sheet;
 
 import org.example.playus.domain.board.JobGroup;
-import org.example.playus.domain.employee.RecentExpDetail;
+import org.example.playus.domain.employee.model.RecentExpDetail;
 import org.example.playus.domain.employeeExp.EmployeeExp;
 import org.example.playus.domain.employeeExp.ExpForYear;
-import org.example.playus.domain.employee.Account;
-import org.example.playus.domain.employee.Employee;
-import org.example.playus.domain.employee.PersonalInfo;
+import org.example.playus.domain.employee.model.Account;
+import org.example.playus.domain.employee.model.Employee;
+import org.example.playus.domain.employee.model.PersonalInfo;
 import org.example.playus.domain.board.Board;
 import org.example.playus.domain.evaluation.Evaluation;
 import org.example.playus.domain.evaluation.PersonalEvaluation;

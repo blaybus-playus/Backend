@@ -2,10 +2,10 @@ package org.example.playus.domain.login;
 
 import lombok.RequiredArgsConstructor;
 import org.example.playus.domain.admin.Role;
-import org.example.playus.domain.employee.Account;
-import org.example.playus.domain.employee.Employee;
+import org.example.playus.domain.employee.model.Account;
+import org.example.playus.domain.employee.model.Employee;
 import org.example.playus.domain.employee.EmployeeRepositoryMongo;
-import org.example.playus.domain.employee.TokenStore;
+import org.example.playus.domain.employee.model.TokenStore;
 import org.example.playus.domain.login.dto.LoginRequestDto;
 import org.example.playus.domain.login.dto.LoginResponseDto;
 import org.example.playus.domain.security.jwt.JwtUtil;

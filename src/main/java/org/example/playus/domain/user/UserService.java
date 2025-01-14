@@ -1,10 +1,10 @@
 package org.example.playus.domain.user;
 
 import lombok.RequiredArgsConstructor;
-import org.example.playus.domain.employee.Account;
-import org.example.playus.domain.employee.Employee;
+import org.example.playus.domain.employee.model.Account;
+import org.example.playus.domain.employee.model.Employee;
 import org.example.playus.domain.employee.EmployeeRepositoryMongo;
-import org.example.playus.domain.employee.PersonalInfo;
+import org.example.playus.domain.employee.model.PersonalInfo;
 import org.example.playus.domain.user.dto.UserUpdateRequestDtoForAdmin;
 import org.example.playus.domain.user.dto.UserUpdateRequestDtoForUser;
 import org.example.playus.global.exception.CustomException;

@@ -10,14 +10,13 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.playus.domain.board.Board;
 import org.example.playus.domain.board.BoardRepositoryMongo;
-import org.example.playus.domain.employee.Employee;
+import org.example.playus.domain.employee.model.Employee;
 import org.example.playus.domain.employee.EmployeeRepositoryMongo;
-import org.example.playus.domain.employee.RecentExpDetail;
+import org.example.playus.domain.employee.model.RecentExpDetail;
 import org.example.playus.domain.employeeExp.EmployeeExp;
 import org.example.playus.domain.employeeExp.EmployeeExpRepository;
 import org.example.playus.domain.evaluation.Evaluation;
 import org.example.playus.domain.evaluation.EvaluationRepository;
-import org.example.playus.domain.evaluation.PersonalEvaluation;
 import org.example.playus.domain.level.Level;
 import org.example.playus.domain.level.LevelRepository;
 import org.example.playus.domain.project.Project;
@@ -341,7 +340,7 @@ public class GoogleSheetService {
                         .orElseThrow(() -> new CustomException(ErrorCode.EMPLOYEE_NOT_FOUND));
                 List<RecentExpDetail> recentExpDetailList = employee.getRecentExpDetails();
                 RecentExpDetail recentExpDetail = RecentExpDetail.builder()
-                        .date(project.getModifiedAt())
+                        .date(project.getMonth() + "월 " + project.getDay() + "일")
                         .questGroup("전사 프로젝트")
                         .questName(project.getProjectTitle())
                         .score(project.getScore())

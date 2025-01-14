@@ -5,9 +5,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import org.example.playus.domain.employee.PersonalInfo;
-import org.example.playus.domain.employee.Account;
-import org.example.playus.domain.employee.TokenStore;
+import org.example.playus.domain.employee.model.PersonalInfo;
+import org.example.playus.domain.employee.model.Account;
+import org.example.playus.domain.employee.model.TokenStore;
 
 import java.util.Map;
 
