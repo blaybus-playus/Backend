@@ -1,5 +1,7 @@
 package org.example.playus.domain.sheet;
 
+import org.example.playus.domain.admin.Admin;
+import org.example.playus.domain.admin.Role;
 import org.example.playus.domain.board.JobGroup;
 import org.example.playus.domain.employee.model.RecentExpDetail;
 import org.example.playus.domain.employeeExp.EmployeeExp;
@@ -78,6 +80,15 @@ public class GoogleSheetsConvert {
                             row.get(headerIndexMap.get("변경패스워드")).toString())
                     .build();
             employee.setAccount(account);
+
+            Admin admin = new Admin();
+            if(account.getUsername().contains("admin")) {
+                admin.setRole(Role.ROLE_ADMIN);
+            } else {
+                admin.setRole(Role.ROLE_USER);
+            }
+
+            employee.setAdmin(admin);
 
             // 최근 경험치 상세 정보 생성
             List<RecentExpDetail> recentExpDetails = new ArrayList<>();
