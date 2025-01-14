@@ -25,10 +25,7 @@ import org.example.playus.domain.project.Project;
 import org.example.playus.domain.project.ProjectRepository;
 import org.example.playus.domain.quest.groupGuset.GroupQuest;
 import org.example.playus.domain.quest.groupGuset.GroupQuestRepositoryMongo;
-import org.example.playus.domain.quest.leaderQuest.LeaderQuest;
-import org.example.playus.domain.quest.leaderQuest.LeaderQuestExp;
-import org.example.playus.domain.quest.leaderQuest.LeaderQuestExpRepository;
-import org.example.playus.domain.quest.leaderQuest.LeaderQuestRepository;
+import org.example.playus.domain.quest.leaderQuest.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -37,7 +34,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -93,7 +93,6 @@ public class GoogleSheetService {
     }
 
 
-
     @Transactional
     public void syncAll(String spreadSheetId, String employeeRange, String groupQuestRange, String leaderQuestRange, String boardRANGE,
                         String projectRANGE, String evaluationRange, String groupEmployeeExpRange, String levelExpRange) {
@@ -121,7 +120,7 @@ public class GoogleSheetService {
             log.info("Sheet Data Read: {}", sheetData);
 
             List<Employee> employees = GoogleSheetsConvert.convertToUsers(sheetData);
-            for(Employee employee : employees) {
+            for (Employee employee : employees) {
                 System.out.println(employee);
             }
 
@@ -207,18 +206,39 @@ public class GoogleSheetService {
 
             String leaderQuestRange = leaderQuestRANGE + "!B9:G";
             List<List<Object>> leaderQuestExpData = googleSheetsHelper.readSheetData(spreadSheetId, leaderQuestRange);
-            List<LeaderQuestExp> leaderQuestExpList = GoogleSheetsConvert.convertToLeaderQuestExp(affiliation, leaderQuestExpData);
+            List<LeaderQuestExp> newLeaderQuestExpList = GoogleSheetsConvert.convertToLeaderQuestExp(affiliation, leaderQuestExpData);
 
-            // 기존 데이터 삭제
+            // 기존 데이터 조회
             List<LeaderQuestExp> existingLeaderQuestExps = leaderQuestExpRepository.findAllByAffiliation(affiliation);
-            if (!existingLeaderQuestExps.isEmpty()) {
-                leaderQuestExpRepository.deleteAll();
-                log.info("기존 LeaderQuestExp 데이터 삭제 완료: {}", affiliation);
-            }
 
-            // 새로운 데이터 저장
-            leaderQuestExpRepository.saveAll(leaderQuestExpList);
-            log.info("새로운 LeaderQuestExp 데이터 저장 완료: {}", affiliation);
+            // 새 데이터 업데이트 또는 추가
+            for (LeaderQuestExp newExp : newLeaderQuestExpList) {
+                boolean isUpdated = false;
+                for (LeaderQuestExp existingExp : existingLeaderQuestExps) {
+                    LeaderQuestEmployeeList existingList = existingExp.getLeaderQuestEmployeeList();
+                    LeaderQuestEmployeeList newList = newExp.getLeaderQuestEmployeeList();
+                    if (existingList.getMonth() == newList.getMonth() &&
+                            existingList.getEmployeeId() == newList.getEmployeeId() &&
+                            existingList.getEmployeeName().equals(newList.getEmployeeName())) {
+
+                        // 변경된 데이터 업데이트
+                        if (existingExp.getLeaderQuestEmployeeList().isDifferent(newList)) {
+                            existingList.setQuestName(newList.getQuestName());
+                            existingList.setAchievement(newList.getAchievement());
+                            existingList.setScore(newList.getScore());
+
+                            leaderQuestExpRepository.save(existingExp);
+                        }
+
+                        isUpdated = true;
+                        break;
+                    }
+                }
+                if (!isUpdated) {
+                    leaderQuestExpRepository.save(newExp);
+                }
+            }
+            log.info("LeaderQuestExp 데이터 동기화 완료: {}", affiliation);
         } catch (Exception e) {
             log.error("Google Sheets 동기화 중 오류 발생: ", e);
             throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
@@ -323,47 +343,47 @@ public class GoogleSheetService {
     }
 
     @Transactional
-public void syncGroupEmployeeExp(String spreadSheetId, String groupEmployeeExpRange) {
-    try {
-        for (int year = 2022; year <= 2024; year++) {
-            String yearRange = year + " " + groupEmployeeExpRange;
+    public void syncGroupEmployeeExp(String spreadSheetId, String groupEmployeeExpRange) {
+        try {
+            for (int year = 2022; year <= 2024; year++) {
+                String yearRange = year + " " + groupEmployeeExpRange;
 
-            String titleRange = yearRange + "!B23";
-            String title = googleSheetsHelper.readCell(spreadSheetId, titleRange);
+                String titleRange = yearRange + "!B23";
+                String title = googleSheetsHelper.readCell(spreadSheetId, titleRange);
 
-            int maxExp = Integer.parseInt(googleSheetsHelper.readCell(spreadSheetId, yearRange + "!C14"))
-                    + Integer.parseInt(googleSheetsHelper.readCell(spreadSheetId, yearRange + "!E14"))
-                    + Integer.parseInt(googleSheetsHelper.readCell(spreadSheetId, yearRange + "!G14"));
+                int maxExp = Integer.parseInt(googleSheetsHelper.readCell(spreadSheetId, yearRange + "!C14"))
+                        + Integer.parseInt(googleSheetsHelper.readCell(spreadSheetId, yearRange + "!E14"))
+                        + Integer.parseInt(googleSheetsHelper.readCell(spreadSheetId, yearRange + "!G14"));
 
-            String groupEmployeeExpDataRange = yearRange + "!B25:L";
-            List<List<Object>> groupEmployeeExpData = googleSheetsHelper.readSheetData(spreadSheetId, groupEmployeeExpDataRange);
-            List<EmployeeExp> employeeExpList = GoogleSheetsConvert.convertToEmployeeExp(title, groupEmployeeExpData);
+                String groupEmployeeExpDataRange = yearRange + "!B25:L";
+                List<List<Object>> groupEmployeeExpData = googleSheetsHelper.readSheetData(spreadSheetId, groupEmployeeExpDataRange);
+                List<EmployeeExp> employeeExpList = GoogleSheetsConvert.convertToEmployeeExp(title, groupEmployeeExpData);
 
-            // 연도 필드 설정
-            for (EmployeeExp employeeExp : employeeExpList) {
-                employeeExp.setYear(year);
-                employeeExp.setMaxExp(maxExp);
+                // 연도 필드 설정
+                for (EmployeeExp employeeExp : employeeExpList) {
+                    employeeExp.setYear(year);
+                    employeeExp.setMaxExp(maxExp);
+                }
+
+                // 기존 데이터 삭제 (해당 연도 데이터만 삭제)
+                employeeExpRepository.deleteByYear(year);
+
+                // 새로운 데이터 저장
+                employeeExpRepository.saveAll(employeeExpList);
             }
-
-            // 기존 데이터 삭제 (해당 연도 데이터만 삭제)
-            employeeExpRepository.deleteByYear(year);
-
-            // 새로운 데이터 저장
-            employeeExpRepository.saveAll(employeeExpList);
+        } catch (Exception e) {
+            log.error("Google Sheets 동기화 중 오류 발생: ", e);
+            throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
         }
-    } catch (Exception e) {
-        log.error("Google Sheets 동기화 중 오류 발생: ", e);
-        throw new RuntimeException("MongoDB 동기화 중 오류 발생: " + e.getMessage());
     }
-}
 
     @Transactional
     public void syncLevelExp(String spreadSheetId, String levelExpRange) {
-        try{
-            String levelF = googleSheetsHelper.readCell(spreadSheetId,levelExpRange + "!B7");
-            String levelB = googleSheetsHelper.readCell(spreadSheetId,levelExpRange + "!E7");
-            String levelG = googleSheetsHelper.readCell(spreadSheetId,levelExpRange + "!H7");
-            String levelT = googleSheetsHelper.readCell(spreadSheetId,levelExpRange + "!K7");
+        try {
+            String levelF = googleSheetsHelper.readCell(spreadSheetId, levelExpRange + "!B7");
+            String levelB = googleSheetsHelper.readCell(spreadSheetId, levelExpRange + "!E7");
+            String levelG = googleSheetsHelper.readCell(spreadSheetId, levelExpRange + "!H7");
+            String levelT = googleSheetsHelper.readCell(spreadSheetId, levelExpRange + "!K7");
 
             String levelFDataRange = levelExpRange + "!B8:C";
             String levelBDataRange = levelExpRange + "!E8:F";
