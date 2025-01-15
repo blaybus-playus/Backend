@@ -6,8 +6,9 @@ import org.example.playus.domain.employee.model.Employee;
 import org.example.playus.domain.employee.EmployeeRepositoryMongo;
 import org.example.playus.domain.employee.model.PersonalInfo;
 import org.example.playus.domain.user.dto.UserProfileResponseDto;
+import org.example.playus.domain.user.dto.UserUpdateCharacterRequestDtoUser;
 import org.example.playus.domain.user.dto.UserUpdateRequestDtoForAdmin;
-import org.example.playus.domain.user.dto.UserUpdateRequestDtoForUser;
+import org.example.playus.domain.user.dto.UserUpdatePasswordRequestDtoForUser;
 import org.example.playus.global.exception.CustomException;
 import org.example.playus.global.exception.ErrorCode;
 import org.springframework.stereotype.Service;
@@ -89,27 +90,37 @@ public class UserService {
         employeeRepositoryMongo.save(employee);
     }
 
-    public void updatePersonalInfoAsUser(String username, String currentPassword, UserUpdateRequestDtoForUser requestDto) {
+    public void updatePasswordInfoAsUser(String username, UserUpdatePasswordRequestDtoForUser requestDto) {
         Employee employee = employeeRepositoryMongo.findByAccountUsername(username)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         // 현재 비밀번호 검증
-        String savedPassword = employee.getAccount().getUpdatedPassword() != null ?
-                employee.getAccount().getUpdatedPassword() : employee.getAccount().getDefaultPassword();
+        String savedPassword = employee.getAccount().getUpdatedPassword() != null
+                ? employee.getAccount().getUpdatedPassword()
+                : employee.getAccount().getDefaultPassword();
 
-        if (!currentPassword.equals(savedPassword)) {
+        if (!requestDto.getCurrentPassword().equals(savedPassword)) {
             throw new CustomException(ErrorCode.PASSWORD_NOT_CORRECT);
         }
 
-        // 새 비밀번호가 존재하면 업데이트
-        String newPassword = requestDto.getNewPassword();
-        if (newPassword != null && !newPassword.isBlank()) {
-            employee.getAccount().setUpdatedPassword(newPassword);
+        // 새 비밀번호 검증 및 업데이트
+        if (requestDto.getNewPassword() != null && !requestDto.getNewPassword().isBlank()) {
+            employee.getAccount().setUpdatedPassword(requestDto.getNewPassword());
+        } else {
+            throw new CustomException(ErrorCode.BAD_REQUEST);
         }
 
-        // 캐릭터 ID 업데이트
+        employeeRepositoryMongo.save(employee);
+    }
+
+    public void updateCharacterInfoAsUser(String username, UserUpdateCharacterRequestDtoUser requestDto) {
+        Employee employee = employeeRepositoryMongo.findByAccountUsername(username)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
         if (requestDto.getCharacterId() != null && !requestDto.getCharacterId().isBlank()) {
             employee.setCharacterId(requestDto.getCharacterId());
+        } else {
+            throw new CustomException(ErrorCode.BAD_REQUEST);
         }
 
         employeeRepositoryMongo.save(employee);

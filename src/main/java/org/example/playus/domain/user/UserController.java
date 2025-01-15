@@ -5,8 +5,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.example.playus.domain.security.service.UserDetailsImpl;
 import org.example.playus.domain.user.dto.UserProfileResponseDto;
+import org.example.playus.domain.user.dto.UserUpdateCharacterRequestDtoUser;
 import org.example.playus.domain.user.dto.UserUpdateRequestDtoForAdmin;
-import org.example.playus.domain.user.dto.UserUpdateRequestDtoForUser;
+import org.example.playus.domain.user.dto.UserUpdatePasswordRequestDtoForUser;
 import org.example.playus.global.common.CommonResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @Tag(name = "Auth")
 public class UserController {
@@ -87,10 +88,10 @@ public class UserController {
         return ResponseEntity.ok(new CommonResponse<>("사용자 정보가 성공적으로 업데이트되었습니다.", HttpStatus.OK.value(), null));
     }
 
-    @PutMapping("/update")
-    public ResponseEntity<CommonResponse<Void>> updateUserAsUser(
+    @PutMapping("/update/character")
+    public ResponseEntity<CommonResponse<Void>> updateCharacterUserAsUser(
             @RequestParam String username,
-            @RequestBody UserUpdateRequestDtoForUser requestDto,
+            @RequestBody UserUpdateCharacterRequestDtoUser requestDto,
             @AuthenticationPrincipal UserDetailsImpl userDetails
     ) {
         String loggedInUsername = userDetails.getUsername();
@@ -100,9 +101,27 @@ public class UserController {
                     .body(new CommonResponse<>("접근 권한이 없습니다.", HttpStatus.FORBIDDEN.value(), null));
         }
 
-        // 현재 비밀번호 검증 및 업데이트 처리
-        userService.updatePersonalInfoAsUser(loggedInUsername, requestDto.getCurrentPassword(), requestDto);
-        return ResponseEntity.ok(new CommonResponse<>("사용자 정보가 성공적으로 업데이트되었습니다.", HttpStatus.OK.value(), null));
+        // 캐릭터 ID 업데이트 처리
+        userService.updateCharacterInfoAsUser(loggedInUsername, requestDto);
+        return ResponseEntity.ok(new CommonResponse<>("캐릭터 정보가 성공적으로 업데이트되었습니다.", HttpStatus.OK.value(), null));
+    }
+
+    @PutMapping("/update/password")
+    public ResponseEntity<CommonResponse<Void>> updatePasswordUserAsUser(
+            @RequestParam String username,
+            @RequestBody UserUpdatePasswordRequestDtoForUser requestDto,
+            @AuthenticationPrincipal UserDetailsImpl userDetails
+    ) {
+        String loggedInUsername = userDetails.getUsername();
+
+        if (!loggedInUsername.equals(username)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new CommonResponse<>("접근 권한이 없습니다.", HttpStatus.FORBIDDEN.value(), null));
+        }
+
+        // 비밀번호 업데이트 처리
+        userService.updatePasswordInfoAsUser(loggedInUsername, requestDto);
+        return ResponseEntity.ok(new CommonResponse<>("비밀번호가 성공적으로 업데이트되었습니다.", HttpStatus.OK.value(), null));
     }
 
     @DeleteMapping("/admin/delete/{id}")
