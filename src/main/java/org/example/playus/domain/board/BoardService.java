@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.swing.undo.CannotUndoException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -33,7 +33,10 @@ public class BoardService {
         log.info("게시글 등록 시작: 제목 = {}", boardRequestDto.getTitle());
 
         if (boardRequestDto.getTitle() == null || boardRequestDto.getTitle().isBlank()) {
-            throw new IllegalArgumentException("게시글 제목은 비어 있을 수 없습니다.");
+            return BoardResponseDto.builder()
+                    .success(false)
+                    .message("게시글 제목은 비어 있을 수 없습니다.")
+                    .build();
         }
 
         int newId = getMaxBoardId() + 1;
@@ -45,7 +48,10 @@ public class BoardService {
 
         JobGroup jobGroup = boardRequestDto.getJobGroup();
         if (jobGroup == null) {
-            throw new CustomException(ErrorCode.INVALID_GROUP_TYPE);
+            return BoardResponseDto.builder()
+                    .success(false)
+                    .message("잘못된 직군 타입입니다.")
+                    .build();
         }
         board.setJobGroup(jobGroup);
 
@@ -56,7 +62,10 @@ public class BoardService {
             googleSheetsHelper.appendRow(spreadsheetId, range, row);
         } catch (Exception e) {
             log.error("스프레드시트 저장 실패: {}", e.getMessage());
-            throw new RuntimeException("구글 시트에 데이터 추가 실패: " + e.getMessage());
+            return BoardResponseDto.builder()
+                    .success(false)
+                    .message("구글 시트에 데이터 추가 실패: " + e.getMessage())
+                    .build();
         }
 
         log.info("게시글 등록 완료: ID = {}", savedBoard.getId());
@@ -65,7 +74,9 @@ public class BoardService {
                 .id(savedBoard.getId())
                 .title(savedBoard.getTitle())
                 .content(savedBoard.getContent())
-                .jobGroup(board.getJobGroup())
+                .jobGroup(jobGroup)
+                .modifiedAt(LocalDateTime.now())
+                .success(true)
                 .message("게시글이 등록되었습니다.")
                 .build();
     }
