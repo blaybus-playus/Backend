@@ -1,16 +1,18 @@
 package org.example.playus.domain.security.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.example.playus.domain.admin.Role;
-import org.example.playus.domain.employee.model.Employee;
 import org.example.playus.domain.employee.EmployeeRepositoryMongo;
+import org.example.playus.domain.employee.model.Employee;
 import org.example.playus.domain.employee.model.TokenStore;
 import org.example.playus.domain.login.dto.LoginRequestDto;
+import org.example.playus.domain.login.dto.LoginResponseDto;
 import org.example.playus.domain.security.jwt.JwtUtil;
 import org.example.playus.global.exception.CustomException;
 import org.example.playus.global.exception.ErrorCode;
@@ -22,6 +24,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 
 @Slf4j(topic = "JwtAuthenticationFilter")
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
@@ -66,9 +69,20 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
         saveRefreshToken(employee, refreshToken);  // RefreshToken 저장
 
+        //반환하는값을 직접 노출하는것은 보안에 위험!!!
+        boolean isAdmin = role.equals(Role.ROLE_ADMIN);
+
+        LoginResponseDto loginResponseDto = LoginResponseDto.builder()
+                .employeeId(employee.getEmployeeId().toString())
+                .personalInfo(employee.getPersonalInfo())
+                .account(employee.getAccount())
+                .tokenStore(new TokenStore(accessToken, refreshToken))
+                .isAdmin(isAdmin)
+                .build();
+
         // Response Header 및 Body 설정
-        response.addHeader(JwtUtil.AUTHORIZATION_HEADER, "Bearer " + accessToken);  // AccessToken 추가
-        responseSetting(response, 200, "로그인에 성공하였습니다.");
+        response.addHeader(JwtUtil.AUTHORIZATION_HEADER, accessToken);  // AccessToken 추가
+        responseSetting(response, 200, loginResponseDto);
     }
 
     @Override
@@ -86,9 +100,16 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         employeeRepository.save(employee);  // 토큰 정보 업데이트
     }
 
-    private void responseSetting(HttpServletResponse response, int statusCode, String message) throws IOException {
+    private void responseSetting(HttpServletResponse response, int statusCode, Object responseDto) throws IOException {
         response.setStatus(statusCode);
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write("{\"message\": \"" + message + "\"}");
+
+        // DTO 객체를 JSON 문자열로 변환
+        Gson gson = new Gson();
+        String jsonResponse = gson.toJson(responseDto);
+
+        PrintWriter out = response.getWriter();
+        out.print(jsonResponse);  // JSON 응답 출력
+        out.flush();
     }
 }
