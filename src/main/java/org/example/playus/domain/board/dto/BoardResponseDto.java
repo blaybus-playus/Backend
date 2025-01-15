@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.playus.domain.board.JobGroup;
 
+import java.time.LocalDateTime;
+
 @Getter
 @NoArgsConstructor
 public class BoardResponseDto {
@@ -13,35 +15,18 @@ public class BoardResponseDto {
     private String title;    // 게시글 제목
     private String content;  // 게시글 내용
     private JobGroup jobGroup;
+    private LocalDateTime modifiedAt;
     private boolean success; // 요청 성공 여부
     private String message;  // 응답 메시지
 
     @Builder
-    public BoardResponseDto(String id, String title, String content,JobGroup jobGroup ,boolean success, String message) {
+    public BoardResponseDto(String id, String title, String content,LocalDateTime modifiedAt, JobGroup jobGroup ,boolean success, String message) {
         this.id = id;
         this.title = title;
         this.content = content;
         this.jobGroup = jobGroup;
+        this.modifiedAt = modifiedAt;
         this.success = success;
         this.message = message;
-    }
-
-    // 성공 응답을 생성하는 정적 메서드
-    public static BoardResponseDto success(String id, String title, String content, String message) {
-        return BoardResponseDto.builder()
-                .id(id)
-                .title(title)
-                .content(content)
-                .success(true)
-                .message(message)
-                .build();
-    }
-
-    // 실패 응답을 생성하는 정적 메서드
-    public static BoardResponseDto failure(String message) {
-        return BoardResponseDto.builder()
-                .success(false)
-                .message(message)
-                .build();
     }
 }
