@@ -6,6 +6,7 @@ import org.example.playus.domain.employee.dto.EmployeeExpReponseDto;
 import org.example.playus.domain.employee.dto.EmployeeGroupQuestResponseDto;
 import org.example.playus.domain.employee.dto.EmployeeHistoryResponseDto;
 import org.example.playus.domain.employee.model.Employee;
+import org.example.playus.domain.quest.leaderQuest.EmployeeLeaderQuestResponseDto;
 import org.example.playus.domain.security.service.UserDetailsImpl;
 import org.example.playus.global.common.CommonResponse;
 import org.springframework.http.ResponseEntity;
@@ -74,6 +75,19 @@ public class EmployeeController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             CommonResponse response = new CommonResponse<>("회원 퀘스트 그룹 조회 실패", 500, e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
+    @GetMapping("/quest/leader")
+    public ResponseEntity<CommonResponse> getEmployeeQuestLeader(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        try {
+            Employee employee = userDetails.getEmployee();
+            EmployeeLeaderQuestResponseDto responseDto = employeeService.getEmployeeQuestLeader(Integer.parseInt(employee.getEmployeeId()));
+            CommonResponse response = new CommonResponse<>("회원 퀘스트 리더 조회", 200, responseDto);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            CommonResponse response = new CommonResponse<>("회원 퀘스트 리더 조회 실패", 500, e.getMessage());
             return ResponseEntity.status(500).body(response);
         }
     }

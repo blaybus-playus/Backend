@@ -4,13 +4,13 @@ import lombok.Builder;
 import lombok.Getter;
 
 @Getter
-public class QuestInfo {
+public class GroupQeustInfo {
     private int weekOrMonth;
     private int score;
     private String etc;
 
     @Builder
-    public QuestInfo(int weekOrMonth, int score, String etc) {
+    public GroupQeustInfo(int weekOrMonth, int score, String etc) {
         this.weekOrMonth = weekOrMonth;
         this.score = score;
         this.etc = etc;

@@ -14,7 +14,8 @@ import org.example.playus.domain.level.LevelExp;
 import org.example.playus.domain.level.LevelRepository;
 import org.example.playus.domain.quest.groupGuset.GroupQuest;
 import org.example.playus.domain.quest.groupGuset.GroupQuestRepositoryMongo;
-import org.example.playus.domain.quest.groupGuset.QuestInfo;
+import org.example.playus.domain.quest.groupGuset.GroupQeustInfo;
+import org.example.playus.domain.quest.leaderQuest.*;
 import org.example.playus.global.exception.CustomException;
 import org.example.playus.global.exception.ErrorCode;
 import org.slf4j.Logger;
@@ -32,6 +33,8 @@ public class EmployeeService {
     private final EmployeeExpRepository employeeExpRepository;
     private final GroupQuestRepositoryMongo groupQuestRepository;
     private final LevelRepository levelRepository;
+    private final LeaderQuestExpRepository leaderQuestExpRepository;
+    private final LeaderQuestRepository leaderQuestRepository;
 
 
     public EmployeeExpReponseDto getEmployeeExp(int employeeId) {
@@ -135,16 +138,16 @@ public class EmployeeService {
 
         List<GroupQuest> groupQuestList = groupQuestRepository.findAllByAffiliationAndDepartment(affiliation, department);
 
-        List<QuestInfo> questInfoList = new ArrayList<>();
+        List<GroupQeustInfo> groupQeustInfoList = new ArrayList<>();
         for(GroupQuest groupQuest : groupQuestList) {
-            questInfoList.add(QuestInfo.builder()
+            groupQeustInfoList.add(GroupQeustInfo.builder()
                             .weekOrMonth(groupQuest.getGroupExperiences().getWeek())
                             .score(groupQuest.getGroupExperiences().getExperience())
                             .etc(groupQuest.getGroupExperiences().getEtc())
                     .build());
         }
 
-        EmployeeGroupQuestResponseDto responseDto = EmployeeGroupQuestResponseDto.builder()
+        return EmployeeGroupQuestResponseDto.builder()
                 .employeeId(employee.getEmployeeId())
                 .employeeName(employee.getPersonalInfo().getName())
                 .affiliation(affiliation)
@@ -152,8 +155,38 @@ public class EmployeeService {
                 .period(groupQuestList.get(0).getPeriod())
                 .maxScore(groupQuestList.get(0).getMaxScore())
                 .mediumScore(groupQuestList.get(0).getMediumScore())
-                .questInfoList(questInfoList)
+                .groupQeustInfoList(groupQeustInfoList)
                 .build();
-        return responseDto;
+    }
+
+    public EmployeeLeaderQuestResponseDto getEmployeeQuestLeader(int employeeId) {
+        Employee employee = employeeRepository.findById(String.valueOf(employeeId))
+                .orElseThrow(() -> new CustomException(ErrorCode.EMPLOYEE_NOT_FOUND));
+
+        String affiliation = employee.getPersonalInfo().getDepartment();
+
+        List<LeaderQuestExp> leaderQuestExpList = leaderQuestExpRepository.findAllByAffiliation(affiliation);
+
+        List<LeaderQuestInfo> leaderQuestInfoList = new ArrayList<>();
+
+        for (LeaderQuestExp leaderQuestExp : leaderQuestExpList) {
+            LeaderQuest leaderQuest = leaderQuestRepository.findByLeaderQuestList_QuestName(leaderQuestExp.getLeaderQuestEmployeeList().getQuestName());
+            leaderQuestInfoList.add(LeaderQuestInfo.builder()
+                            .questName(leaderQuestExp.getLeaderQuestEmployeeList().getQuestName())
+                            .period(leaderQuest.getLeaderQuestList().getPeriod())
+                            .weekOrMonth(leaderQuestExp.getLeaderQuestEmployeeList().getMonth())
+                            .achievement(leaderQuestExp.getLeaderQuestEmployeeList().getAchievement())
+                            .score(leaderQuestExp.getLeaderQuestEmployeeList().getScore())
+                            .requireForMax(leaderQuest.getLeaderQuestList().getRequireForMax())
+                            .requireForMedium(leaderQuest.getLeaderQuestList().getRequireForMedium())
+                    .build());
+        }
+
+        return EmployeeLeaderQuestResponseDto.builder()
+                .employeeId(employee.getEmployeeId())
+                .employeeName(employee.getPersonalInfo().getName())
+                .affiliation(affiliation)
+                .leaderQuestInfoList(leaderQuestInfoList)
+                .build();
     }
 }
