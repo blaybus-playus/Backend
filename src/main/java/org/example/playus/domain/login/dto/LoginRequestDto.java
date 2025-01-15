@@ -1,15 +1,19 @@
 package org.example.playus.domain.login.dto;
 
-import lombok.Builder;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 @Getter
 public class LoginRequestDto {
-    private String username;
-    private String password;
+    private final String username;
+    private final String password;
 
-    @Builder
-    public LoginRequestDto(String username, String password) {
+    @JsonCreator
+    public LoginRequestDto(
+            @JsonProperty("username") String username,
+            @JsonProperty("password") String password
+    ) {
         this.username = username;
         this.password = password;
     }
