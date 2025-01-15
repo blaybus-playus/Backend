@@ -1,9 +1,8 @@
-package org.example.playus.domain.employee;
+package org.example.playus.domain.admin;
 
 
 import lombok.RequiredArgsConstructor;
-import org.example.playus.domain.admin.Admin;
-import org.example.playus.domain.admin.Role;
+import org.example.playus.domain.employee.EmployeeRepositoryMongo;
 import org.example.playus.domain.employee.model.Account;
 import org.example.playus.domain.employee.model.Employee;
 import org.example.playus.domain.employee.model.PersonalInfo;
