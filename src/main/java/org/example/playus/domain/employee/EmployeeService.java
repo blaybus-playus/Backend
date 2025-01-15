@@ -3,6 +3,7 @@ package org.example.playus.domain.employee;
 import lombok.RequiredArgsConstructor;
 import org.example.playus.domain.employee.dto.EmployeeExpDetailResponseDto;
 import org.example.playus.domain.employee.dto.EmployeeExpReponseDto;
+import org.example.playus.domain.employee.dto.EmployeeGroupQuestResponseDto;
 import org.example.playus.domain.employee.dto.EmployeeHistoryResponseDto;
 import org.example.playus.domain.employee.model.Employee;
 import org.example.playus.domain.employee.model.RecentExpDetail;
@@ -11,6 +12,9 @@ import org.example.playus.domain.employeeExp.EmployeeExpRepository;
 import org.example.playus.domain.level.Level;
 import org.example.playus.domain.level.LevelExp;
 import org.example.playus.domain.level.LevelRepository;
+import org.example.playus.domain.quest.groupGuset.GroupQuest;
+import org.example.playus.domain.quest.groupGuset.GroupQuestRepositoryMongo;
+import org.example.playus.domain.quest.groupGuset.QuestInfo;
 import org.example.playus.global.exception.CustomException;
 import org.example.playus.global.exception.ErrorCode;
 import org.slf4j.Logger;
@@ -26,6 +30,7 @@ public class EmployeeService {
     private static final Logger log = LoggerFactory.getLogger(EmployeeService.class);
     private final EmployeeRepositoryMongo employeeRepository;
     private final EmployeeExpRepository employeeExpRepository;
+    private final GroupQuestRepositoryMongo groupQuestRepository;
     private final LevelRepository levelRepository;
 
 
@@ -118,6 +123,37 @@ public class EmployeeService {
                     .build());
         }
 
+        return responseDto;
+    }
+
+    public EmployeeGroupQuestResponseDto getEmployeeQuestGroup(int employeeId) {
+        Employee employee = employeeRepository.findById(String.valueOf(employeeId))
+                .orElseThrow(() -> new CustomException(ErrorCode.EMPLOYEE_NOT_FOUND));
+
+        String affiliation = employee.getPersonalInfo().getDepartment();
+        int department = Integer.parseInt(employee.getPersonalInfo().getJobGroup());
+
+        List<GroupQuest> groupQuestList = groupQuestRepository.findAllByAffiliationAndDepartment(affiliation, department);
+
+        List<QuestInfo> questInfoList = new ArrayList<>();
+        for(GroupQuest groupQuest : groupQuestList) {
+            questInfoList.add(QuestInfo.builder()
+                            .weekOrMonth(groupQuest.getGroupExperiences().getWeek())
+                            .score(groupQuest.getGroupExperiences().getExperience())
+                            .etc(groupQuest.getGroupExperiences().getEtc())
+                    .build());
+        }
+
+        EmployeeGroupQuestResponseDto responseDto = EmployeeGroupQuestResponseDto.builder()
+                .employeeId(employee.getEmployeeId())
+                .employeeName(employee.getPersonalInfo().getName())
+                .affiliation(affiliation)
+                .department(department)
+                .period(groupQuestList.get(0).getPeriod())
+                .maxScore(groupQuestList.get(0).getMaxScore())
+                .mediumScore(groupQuestList.get(0).getMediumScore())
+                .questInfoList(questInfoList)
+                .build();
         return responseDto;
     }
 }
