@@ -40,7 +40,8 @@
   
 # [📋서비스 아키텍처]
 
-![playus](https://github.com/user-attachments/assets/82c45e6d-9791-49f1-8204-f82031c05e79)
+![image](https://github.com/user-attachments/assets/b3e167e8-fe5c-4ec7-8c67-90d49134ad11)
+
 
 <div id="f">
 
