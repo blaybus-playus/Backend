@@ -1,6 +1,5 @@
 package org.example.playus.global;
 
-import jakarta.persistence.*;
 import lombok.Getter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -9,7 +8,6 @@ import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 @Getter
@@ -26,14 +24,12 @@ public abstract class Timestamped {
     @Field("modified_at")
     private String modifiedAt;
 
-    @PrePersist
     public void onCreate() {
         if (createdAt == null) {
             createdAt = LocalDateTime.now(ZoneId.of("Asia/Seoul")).format(FORMATTER);
         }
     }
 
-    @PreUpdate
     public void onUpdate() {
         modifiedAt = LocalDateTime.now(ZoneId.of("Asia/Seoul")).format(FORMATTER);
     }

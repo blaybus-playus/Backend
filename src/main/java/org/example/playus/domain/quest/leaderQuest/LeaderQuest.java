@@ -1,9 +1,9 @@
 package org.example.playus.domain.quest.leaderQuest;
 
-import jakarta.persistence.Id;
 import lombok.Builder;
 import lombok.Getter;
 import org.example.playus.global.Timestamped;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Getter
