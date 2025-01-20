@@ -2,6 +2,7 @@ package org.example.playus.domain.security.jwt;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,8 +10,6 @@ import org.example.playus.domain.admin.Role;
 import org.example.playus.global.exception.CustomException;
 import org.example.playus.global.exception.ErrorCode;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
-import io.jsonwebtoken.security.SignatureException;
 
 import java.security.Key;
 import java.util.Base64;
@@ -20,7 +19,7 @@ import java.util.Date;
 @RequiredArgsConstructor
 @Component
 public class JwtUtil {
-    public static final Long ACCESS_TOKEN_EXPIRATION = 60 * 60 * 1000L; // 60분
+    public static final Long ACCESS_TOKEN_EXPIRATION = 7 * 24 * 60 * 60 * 1000L; // 7일
     public static final Long REFRESH_TOKEN_EXPIRATION = 24 * 60 * 60 * 1000L; // 1일
     public static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
